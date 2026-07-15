@@ -207,50 +207,72 @@ function kisiIstatistikleri(isim) {
   return { toplamSayfa, kitaplar, tamamlanan, devamEden, gunSayisi };
 }
 
+const KILOMETRE_TASLARI = [
+  { sinir: 0,    ad: 'Fırlatma Rampası',  emoji: '🚀' },
+  { sinir: 100,  ad: 'Ay Kaşifi',         emoji: '🌙' },
+  { sinir: 500,  ad: 'Mars Gezgini',      emoji: '🔴' },
+  { sinir: 1000, ad: 'Jüpiter Kaşifi',    emoji: '🪐' },
+  { sinir: 2500, ad: 'Galaksi Efsanesi',  emoji: '☀️' },
+];
+const UCUS_TAVANI = 2500;
+
 function rozetBul(sayfa) {
-  if (sayfa >= 2500) return { ad: 'Okuma Efsanesi', emoji: '👑' };
-  if (sayfa >= 1000) return { ad: 'Kitap Kahramanı', emoji: '🏆' };
-  if (sayfa >= 500) return { ad: 'Bilge Okuyucu', emoji: '🦉' };
-  if (sayfa >= 100) return { ad: 'Meraklı Okuyucu', emoji: '📖' };
-  return { ad: 'Filiz Okuyucu', emoji: '🌱' };
+  let sonuc = KILOMETRE_TASLARI[0];
+  KILOMETRE_TASLARI.forEach(k => { if (sayfa >= k.sinir) sonuc = k; });
+  return { ad: sonuc.ad, emoji: sonuc.emoji };
 }
 
 // ------------------------------------------------------------
-// KİŞİ KARTLARI (kitaplık / raf görseli)
+// KİŞİ KARTLARI — "Uçuş Paneli": her okuyucu bir roket, okunan
+// sayfa arttıkça roket gezegenlere doğru yükselir.
 // ------------------------------------------------------------
 function kisiKartlariniOlustur() {
   const alan = document.getElementById('kisiKartlari');
   if (!alan) return;
 
   if (kisiler.length === 0) {
-    alan.innerHTML = `<div class="bosDurum">📚 Henüz okuyucu eklenmedi. Aşağıdan yeni bir okuyucu ekleyerek maceraya başlayın!</div>`;
+    alan.innerHTML = `<div class="bosDurum">🚀 Henüz kaşif eklenmedi. Aşağıdan yeni bir okuyucu ekleyerek uzay yolculuğuna başlayın!</div>`;
     return;
   }
 
   alan.innerHTML = kisiler.map(isim => {
     const ist = kisiIstatistikleri(isim);
     const rozet = rozetBul(ist.toplamSayfa);
+    const roketKonumu = Math.max(3, Math.min(97, (ist.toplamSayfa / UCUS_TAVANI) * 100));
 
-    const raflar = ist.tamamlanan.map((kt, i) => {
-      const genislik = Math.max(14, Math.min(46, 14 + (kt.toplamSayfa / 40)));
-      const renk = RENKLER[i % RENKLER.length];
-      return `<div class="kitapSirti" style="background:${renk}; width:${genislik}px" title="${escapeHtml(kt.kitap)} — ${escapeHtml(kt.yazar || 'Yazar bilinmiyor')}"></div>`;
+    const gezegenler = KILOMETRE_TASLARI.map(k => {
+      const konum = Math.min(97, (k.sinir / UCUS_TAVANI) * 100);
+      const aktif = ist.toplamSayfa >= k.sinir;
+      return `<div class="gezegen ${aktif ? 'gezegenAktif' : ''}" style="bottom:${konum}%" title="${escapeHtml(k.ad)} — ${k.sinir} sayfa">${k.emoji}</div>`;
     }).join('');
+
+    const yildizlar = ist.tamamlanan.map(kt =>
+      `<span class="yildizRozeti" title="${escapeHtml(kt.kitap)} — ${escapeHtml(kt.yazar || 'Yazar bilinmiyor')}">⭐</span>`
+    ).join('');
 
     return `
       <div class="kisiKart">
         <div class="kisiKartUst">
           <h2>${escapeHtml(isim)}</h2>
-          <button class="kisiSilBtn" data-isim="${escapeHtml(isim)}" title="Kişiyi Sil">✕</button>
+          <button class="kisiSilBtn" data-isim="${escapeHtml(isim)}" title="Kaşifi Sil">✕</button>
         </div>
         <div class="rozet">${rozet.emoji} ${rozet.ad}</div>
+
+        <div class="ucusPaneli">
+          <div class="ucusYolu">
+            ${gezegenler}
+            <div class="roket" style="bottom:${roketKonumu}%">🚀</div>
+          </div>
+        </div>
+
         <div class="kisiIstatistik">
           <div><strong>${ist.toplamSayfa}</strong><span>Sayfa</span></div>
           <div><strong>${ist.tamamlanan.length}</strong><span>Kitap</span></div>
           <div><strong>${ist.gunSayisi}</strong><span>Gün</span></div>
         </div>
-        <div class="rafBaslik">📚 Kitaplığı</div>
-        <div class="raf">${raflar || '<span class="rafBos">Henüz tamamlanan kitap yok</span>'}</div>
+
+        <div class="rafBaslik">⭐ Toplanan Yıldızlar</div>
+        <div class="yildizKutusu">${yildizlar || '<span class="rafBos">Henüz yıldız kazanılmadı</span>'}</div>
       </div>
     `;
   }).join('');
@@ -442,14 +464,14 @@ function devamEdenKitaplariGoster() {
   liste.sort((a, b) => b.yuzde - a.yuzde);
 
   if (liste.length === 0) {
-    alan.innerHTML = '<p class="bosDurum">🎉 Devam eden kitap yok — yeni bir maceraya başlamaya ne dersin?</p>';
+    alan.innerHTML = '<p class="bosDurum">🛰️ Devam eden görev yok — yeni bir maceraya başlamaya ne dersin?</p>';
     return;
   }
 
   alan.innerHTML = liste.map(kt => `
     <div class="devamKart">
       <div class="devamBaslik">
-        <span class="devamKisi">${escapeHtml(kt.isim)}</span>
+        <span class="devamKisi">🧑‍🚀 ${escapeHtml(kt.isim)}</span>
         <span class="devamKitap">${escapeHtml(kt.kitap)}</span>
       </div>
       <div class="ilerlemeCubugu">
@@ -457,7 +479,7 @@ function devamEdenKitaplariGoster() {
       </div>
       <div class="devamAlt">
         <span>${kt.okunan} / ${kt.toplamSayfa || '?'} sayfa</span>
-        <span>%${kt.yuzde}</span>
+        <span>%${kt.yuzde} yakıt</span>
       </div>
     </div>
   `).join('');

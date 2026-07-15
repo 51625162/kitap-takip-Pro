@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kitap Takip Pro — Okuma Macerası</title>
+    <title>Okuma Roketi — Kitap Takip</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Quicksand:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
 
     <link rel="stylesheet" href="styles.css" />
 
@@ -19,12 +19,12 @@
     <!-- ====================== -->
     <div id="girisEkrani">
       <div class="girisKutu">
-        <div class="girisIkon">📚</div>
-        <h2>Kitap Takip Pro</h2>
-        <p class="girisAltyazi">Okuma Macerasına Hoş Geldin!</p>
+        <div class="girisIkon">🚀</div>
+        <h2>Okuma Roketi</h2>
+        <p class="girisAltyazi">Uzay yolculuğuna hoş geldin, kaşif!</p>
         <input type="text" id="kullaniciAdi" placeholder="Kullanıcı Adı" autocomplete="username" />
         <input type="password" id="sifre" placeholder="Şifre" autocomplete="current-password" />
-        <button id="girisBtn">Giriş Yap 🚀</button>
+        <button id="girisBtn">Fırlat! 🚀</button>
         <p id="hata"></p>
       </div>
     </div>
@@ -35,14 +35,14 @@
     <div id="uygulama">
       <header>
         <div class="baslikSatiri">
-          <h1>📚 Kitap Takip Pro</h1>
+          <h1>🚀 Okuma Roketi</h1>
           <div class="ustButonlar">
             <button id="temaBtn" class="btn btn-ghost">🌙 Karanlık Mod</button>
             <button id="pdfBtn" class="btn btn-ghost">📄 PDF Raporu</button>
             <button id="cikisBtn" class="btn btn-ghost">🚪 Çıkış Yap</button>
           </div>
         </div>
-        <p class="altBaslik">Kitaplarını takip et, rozetleri topla, okuma şampiyonu ol! 🏆</p>
+        <p class="altBaslik">Her sayfa seni bir gezegen daha yükseğe taşır. Oku, yüksel, galaksiyi keşfet! ✨</p>
       </header>
 
       <main>
@@ -52,12 +52,12 @@
         <!-- KİŞİ YÖNETİMİ -->
         <!-- ====================== -->
         <section class="kart">
-          <h2>👥 Okuyucu Yönetimi</h2>
+          <h2>🧑‍🚀 Kaşif Yönetimi</h2>
           <div class="satirGrup">
-            <input type="text" id="yeniKisi" placeholder="Okuyucunun Adı" />
-            <button id="kisiEkleBtn" class="btn btn-primary">➕ Okuyucu Ekle</button>
+            <input type="text" id="yeniKisi" placeholder="Kaşifin Adı" />
+            <button id="kisiEkleBtn" class="btn btn-primary">➕ Kaşif Ekle</button>
           </div>
-          <label class="kucukEtiket">Kayıtlı Okuyucular</label>
+          <label class="kucukEtiket">Kayıtlı Kaşifler</label>
           <select id="kisiListesi" size="4"></select>
         </section>
 
@@ -65,11 +65,11 @@
         <!-- YENİ OKUMA KAYDI -->
         <!-- ====================== -->
         <section class="kart">
-          <h2>✏️ Yeni Okuma Kaydı</h2>
+          <h2>📡 Yeni Uçuş Kaydı</h2>
 
           <div class="formGrid">
             <div class="formAlan">
-              <label>Okuyucu</label>
+              <label>Kaşif</label>
               <select id="kisi"></select>
             </div>
 
@@ -126,7 +126,7 @@
         <!-- DEVAM EDEN KİTAPLAR -->
         <!-- ====================== -->
         <section class="kart">
-          <h2>📖 Devam Eden Kitaplar</h2>
+          <h2>🛰️ Devam Eden Görevler</h2>
           <div id="devamEdenKitaplar" class="devamListesi"></div>
         </section>
 
@@ -134,13 +134,13 @@
         <!-- GÜNLÜK KAYITLAR -->
         <!-- ====================== -->
         <section class="kart">
-          <h2>📋 Günlük Kayıtlar</h2>
+          <h2>📋 Uçuş Günlüğü</h2>
           <div class="tabloKapsayici">
             <table id="kayitTablosu">
               <thead>
                 <tr>
                   <th>Tarih</th>
-                  <th>Kişi</th>
+                  <th>Kaşif</th>
                   <th>Kitap</th>
                   <th>Yazar</th>
                   <th>Sayfa</th>
@@ -157,14 +157,14 @@
         <!-- KİTAP ARŞİVİ -->
         <!-- ====================== -->
         <section class="kart">
-          <h2>📚 Kitap Arşivi</h2>
+          <h2>📚 Yıldız Kütüphanesi</h2>
           <div class="tabloKapsayici">
             <table id="arsivTablosu">
               <thead>
                 <tr>
                   <th>Kitap</th>
                   <th>Yazar</th>
-                  <th>Kişi</th>
+                  <th>Kaşif</th>
                   <th>Sayfa</th>
                   <th>Durum</th>
                 </tr>
@@ -178,8 +178,8 @@
         <!-- DOSYA ARŞİVİ -->
         <!-- ====================== -->
         <section class="kart">
-          <h2>🗂️ Dosya Arşivi</h2>
-          <p class="aciklamaMetni">PDF veya Excel dosyalarını arşive ekle, istediğin zaman indir. Dosyalar sadece bu tarayıcıda saklanır (maks. 4MB).</p>
+          <h2>📦 Kargo Ambarı</h2>
+          <p class="aciklamaMetni">PDF veya Excel dosyalarını kargo ambarına ekle, istediğin zaman indir. Dosyalar sadece bu tarayıcıda saklanır (maks. 4MB).</p>
           <div class="satirGrup">
             <input type="file" id="dosyaArsivInput" accept=".pdf,.xlsx,.xls" />
           </div>
@@ -190,7 +190,7 @@
         <!-- İSTATİSTİKLER -->
         <!-- ====================== -->
         <section class="kart">
-          <h2>📊 Genel İstatistikler</h2>
+          <h2>🎛️ Uçuş İstasyonu</h2>
           <div class="istatistikGrid">
             <div class="istatistikKart">
               <h3>📖 Toplam Sayfa</h3>
@@ -201,7 +201,7 @@
               <h2 id="toplamKitapGenel">0</h2>
             </div>
             <div class="istatistikKart">
-              <h3>🏆 En Çok Okuyan</h3>
+              <h3>🏆 En Yüksek Uçuş</h3>
               <h2 id="lider">-</h2>
             </div>
           </div>
@@ -211,14 +211,14 @@
         <!-- GRAFİK -->
         <!-- ====================== -->
         <section class="kart">
-          <h2>📈 Okuma Grafiği</h2>
+          <h2>📡 Sinyal Grafiği</h2>
           <div style="height: 300px">
             <canvas id="okumaGrafik"></canvas>
           </div>
         </section>
 
         <footer>
-          <p>© 2026 Kitap Takip Pro — Her sayfa bir macera 🌟</p>
+          <p>© 2026 Okuma Roketi — Her sayfa seni yıldızlara biraz daha yaklaştırır 🌌</p>
         </footer>
       </main>
     </div>
