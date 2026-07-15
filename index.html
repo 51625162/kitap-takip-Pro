@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kitap Takip Pro — Okuma Macerası</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="styles.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+
+  <body>
+    <!-- ====================== -->
+    <!-- GİRİŞ EKRANI -->
+    <!-- ====================== -->
+    <div id="girisEkrani">
+      <div class="girisKutu">
+        <div class="girisIkon">📚</div>
+        <h2>Kitap Takip Pro</h2>
+        <p class="girisAltyazi">Okuma Macerasına Hoş Geldin!</p>
+        <input type="text" id="kullaniciAdi" placeholder="Kullanıcı Adı" autocomplete="username" />
+        <input type="password" id="sifre" placeholder="Şifre" autocomplete="current-password" />
+        <button id="girisBtn">Giriş Yap 🚀</button>
+        <p id="hata"></p>
+      </div>
+    </div>
+
+    <!-- ====================== -->
+    <!-- UYGULAMA -->
+    <!-- ====================== -->
+    <div id="uygulama">
+      <header>
+        <div class="baslikSatiri">
+          <h1>📚 Kitap Takip Pro</h1>
+          <div class="ustButonlar">
+            <button id="temaBtn" class="btn btn-ghost">🌙 Karanlık Mod</button>
+            <button id="pdfBtn" class="btn btn-ghost">📄 PDF Raporu</button>
+            <button id="cikisBtn" class="btn btn-ghost">🚪 Çıkış Yap</button>
+          </div>
+        </div>
+        <p class="altBaslik">Kitaplarını takip et, rozetleri topla, okuma şampiyonu ol! 🏆</p>
+      </header>
+
+      <main>
+        <section id="kisiKartlari" class="kisiKartGrid"></section>
+
+        <!-- ====================== -->
+        <!-- KİŞİ YÖNETİMİ -->
+        <!-- ====================== -->
+        <section class="kart">
+          <h2>👥 Okuyucu Yönetimi</h2>
+          <div class="satirGrup">
+            <input type="text" id="yeniKisi" placeholder="Okuyucunun Adı" />
+            <button id="kisiEkleBtn" class="btn btn-primary">➕ Okuyucu Ekle</button>
+          </div>
+          <label class="kucukEtiket">Kayıtlı Okuyucular</label>
+          <select id="kisiListesi" size="4"></select>
+        </section>
+
+        <!-- ====================== -->
+        <!-- YENİ OKUMA KAYDI -->
+        <!-- ====================== -->
+        <section class="kart">
+          <h2>✏️ Yeni Okuma Kaydı</h2>
+
+          <div class="formGrid">
+            <div class="formAlan">
+              <label>Okuyucu</label>
+              <select id="kisi"></select>
+            </div>
+
+            <div class="formAlan">
+              <label>Tarih</label>
+              <div class="tarihKutusu">
+                <span>📅</span>
+                <input type="date" id="tarih" />
+              </div>
+            </div>
+
+            <div class="formAlan">
+              <label>Kitap Adı</label>
+              <input type="text" id="kitapAdi" placeholder="Örn. Küçük Prens" />
+            </div>
+
+            <div class="formAlan">
+              <label>Yazar</label>
+              <input type="text" id="yazar" placeholder="Örn. Antoine de Saint-Exupéry" />
+            </div>
+
+            <div class="formAlan">
+              <label>Kitabın Toplam Sayfası</label>
+              <input type="number" id="toplamSayfa" min="0" placeholder="Örn. 120" />
+            </div>
+
+            <div class="formAlan">
+              <label>Bugün Okunan Sayfa</label>
+              <input type="number" id="okunanSayfa" min="0" placeholder="Örn. 20" />
+            </div>
+
+            <div class="formAlan formAlanGenis">
+              <label>📎 Dosya Ekle (isteğe bağlı — PDF veya Excel)</label>
+              <input type="file" id="kayitDosya" accept=".pdf,.xlsx,.xls" />
+            </div>
+          </div>
+
+          <div class="butonGrup">
+            <button id="kaydetBtn" class="btn btn-primary">💾 Kaydı Ekle</button>
+            <button id="iptalBtn" class="btn btn-ghost" style="display:none;">✖ İptal</button>
+          </div>
+
+          <div class="excelGrup">
+            <button id="excelAktarBtn" class="btn btn-success">📥 Excel'e Aktar</button>
+
+            <input type="file" id="excelDosya" accept=".xlsx,.xls" style="display:none" />
+            <button id="excelYukleBtn" class="btn btn-secondary" onclick="document.getElementById('excelDosya').click()">
+              📤 Excel'den Yükle
+            </button>
+          </div>
+        </section>
+
+        <!-- ====================== -->
+        <!-- DEVAM EDEN KİTAPLAR -->
+        <!-- ====================== -->
+        <section class="kart">
+          <h2>📖 Devam Eden Kitaplar</h2>
+          <div id="devamEdenKitaplar" class="devamListesi"></div>
+        </section>
+
+        <!-- ====================== -->
+        <!-- GÜNLÜK KAYITLAR -->
+        <!-- ====================== -->
+        <section class="kart">
+          <h2>📋 Günlük Kayıtlar</h2>
+          <div class="tabloKapsayici">
+            <table id="kayitTablosu">
+              <thead>
+                <tr>
+                  <th>Tarih</th>
+                  <th>Kişi</th>
+                  <th>Kitap</th>
+                  <th>Yazar</th>
+                  <th>Sayfa</th>
+                  <th>Dosya</th>
+                  <th>İşlem</th>
+                </tr>
+              </thead>
+              <tbody id="kayitlarBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ====================== -->
+        <!-- KİTAP ARŞİVİ -->
+        <!-- ====================== -->
+        <section class="kart">
+          <h2>📚 Kitap Arşivi</h2>
+          <div class="tabloKapsayici">
+            <table id="arsivTablosu">
+              <thead>
+                <tr>
+                  <th>Kitap</th>
+                  <th>Yazar</th>
+                  <th>Kişi</th>
+                  <th>Sayfa</th>
+                  <th>Durum</th>
+                </tr>
+              </thead>
+              <tbody id="arsivBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ====================== -->
+        <!-- DOSYA ARŞİVİ -->
+        <!-- ====================== -->
+        <section class="kart">
+          <h2>🗂️ Dosya Arşivi</h2>
+          <p class="aciklamaMetni">PDF veya Excel dosyalarını arşive ekle, istediğin zaman indir. Dosyalar sadece bu tarayıcıda saklanır (maks. 4MB).</p>
+          <div class="satirGrup">
+            <input type="file" id="dosyaArsivInput" accept=".pdf,.xlsx,.xls" />
+          </div>
+          <div id="dosyaArsiviListesi" class="dosyaListesi"></div>
+        </section>
+
+        <!-- ====================== -->
+        <!-- İSTATİSTİKLER -->
+        <!-- ====================== -->
+        <section class="kart">
+          <h2>📊 Genel İstatistikler</h2>
+          <div class="istatistikGrid">
+            <div class="istatistikKart">
+              <h3>📖 Toplam Sayfa</h3>
+              <h2 id="toplamSayfaGenel">0</h2>
+            </div>
+            <div class="istatistikKart">
+              <h3>📚 Toplam Kitap</h3>
+              <h2 id="toplamKitapGenel">0</h2>
+            </div>
+            <div class="istatistikKart">
+              <h3>🏆 En Çok Okuyan</h3>
+              <h2 id="lider">-</h2>
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================== -->
+        <!-- GRAFİK -->
+        <!-- ====================== -->
+        <section class="kart">
+          <h2>📈 Okuma Grafiği</h2>
+          <div style="height: 300px">
+            <canvas id="okumaGrafik"></canvas>
+          </div>
+        </section>
+
+        <footer>
+          <p>© 2026 Kitap Takip Pro — Her sayfa bir macera 🌟</p>
+        </footer>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
