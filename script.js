@@ -7,6 +7,7 @@
 let kayitlar   = JSON.parse(localStorage.getItem('kitapKayitlari')) || [];
 let kisiler    = JSON.parse(localStorage.getItem('kisiler')) || [];
 let dosyaArsivi = JSON.parse(localStorage.getItem('dosyaArsivi')) || [];
+let evcilHayvanlar = JSON.parse(localStorage.getItem('evcilHayvanlar')) || {}; // { "İsim": "kedi" }
 
 let duzenlenenIndex = -1;
 let grafik = null;
@@ -14,6 +15,57 @@ let grafik = null;
 const RENKLER = ['#F6B93B', '#FF6F91', '#3DDC97', '#5D9CEC', '#B98CE0', '#FF9F43', '#5AC8FA'];
 const KULLANICI = "TALHA";
 const SIFRE = "54321";
+
+// Evrim eşikleri: bu kadar KİTAP TAMAMLAYINCA hayvan bir üst forma geçer.
+const EVRIM_ESIKLERI = [100, 200, 300, 400];
+
+const HAYVAN_TURLERI = {
+  kedi: {
+    ad: 'Kedigiller Ailesi',
+    asamalar: [
+      { ad: 'Yavru Kedi', emoji: '🐱' },
+      { ad: 'Genç Panter', emoji: '🐆' },
+      { ad: 'Kaplan', emoji: '🐅' },
+      { ad: 'Efsanevi Altın Aslan', emoji: '🦁' },
+    ],
+  },
+  kertenkele: {
+    ad: 'Ejderha Ailesi',
+    asamalar: [
+      { ad: 'Yavru Kertenkele', emoji: '🦎' },
+      { ad: 'Ejderha Yavrusu', emoji: '🐉' },
+      { ad: 'Genç Ejderha', emoji: '🐲' },
+      { ad: 'Efsanevi Gökkuşağı Ejderhası', emoji: '🐉' },
+    ],
+  },
+  kurt: {
+    ad: 'Kurt Ailesi',
+    asamalar: [
+      { ad: 'Kurt Yavrusu', emoji: '🐺' },
+      { ad: 'Genç Kurt', emoji: '🐺' },
+      { ad: 'Kutup Kurdu', emoji: '🐺' },
+      { ad: 'Efsanevi Ay Kurdu', emoji: '🌕' },
+    ],
+  },
+  kus: {
+    ad: 'Kuş Ailesi',
+    asamalar: [
+      { ad: 'Yavru Kuş', emoji: '🐣' },
+      { ad: 'Genç Şahin', emoji: '🦅' },
+      { ad: 'Kartal', emoji: '🦅' },
+      { ad: 'Efsanevi Anka Kuşu', emoji: '🔥' },
+    ],
+  },
+  balik: {
+    ad: 'Deniz Ailesi',
+    asamalar: [
+      { ad: 'Yavru Balık', emoji: '🐠' },
+      { ad: 'Genç Yunus', emoji: '🐬' },
+      { ad: 'Deniz Canavarı', emoji: '🐋' },
+      { ad: 'Efsanevi Deniz Ejderhası', emoji: '🐉' },
+    ],
+  },
+};
 
 // ------------------------------------------------------------
 // YARDIMCI FONKSİYONLAR
@@ -50,6 +102,23 @@ function kaydetVeri() {
 
 function kaydetDosyaArsivi() {
   localStorage.setItem('dosyaArsivi', JSON.stringify(dosyaArsivi));
+}
+
+function kaydetEvcilHayvanlar() {
+  localStorage.setItem('evcilHayvanlar', JSON.stringify(evcilHayvanlar));
+}
+
+function evrimAsamasi(kitapSayisi) {
+  let asama = -1;
+  EVRIM_ESIKLERI.forEach((esik, i) => { if (kitapSayisi >= esik) asama = i; });
+  return asama; // -1: henüz kilitli, 0-3: evrim aşaması
+}
+
+function evcilHayvanSec(isim, tur) {
+  if (!HAYVAN_TURLERI[tur]) return;
+  evcilHayvanlar[isim] = tur;
+  kaydetEvcilHayvanlar();
+  kisiKartlariniOlustur();
 }
 
 // ------------------------------------------------------------
@@ -162,7 +231,9 @@ function kisiSil(isim) {
   if (!confirm(`"${isim}" ve tüm okuma kayıtları silinsin mi? Bu işlem geri alınamaz.`)) return;
   kisiler = kisiler.filter(k => k !== isim);
   kayitlar = kayitlar.filter(k => k.kisi !== isim);
+  delete evcilHayvanlar[isim];
   kaydetVeri();
+  kaydetEvcilHayvanlar();
   tumunuGuncelle();
 }
 
@@ -250,6 +321,49 @@ function kisiKartlariniOlustur() {
       `<span class="yildizRozeti" title="${escapeHtml(kt.kitap)} — ${escapeHtml(kt.yazar || 'Yazar bilinmiyor')}">⭐</span>`
     ).join('');
 
+    // Kupa Dolabı — her 50 tamamlanan kitapta bir kupa
+    const tamamlananSayisi = ist.tamamlanan.length;
+    const kupaAdedi = Math.floor(tamamlananSayisi / 50);
+    const kupaGosterim = kupaAdedi > 0
+      ? Array(Math.min(kupaAdedi, 8)).fill('🏆').join('') + (kupaAdedi > 8 ? ` +${kupaAdedi - 8}` : '')
+      : '';
+    const kupayaKalan = 50 - (tamamlananSayisi % 50);
+
+    // Büyülü Dost — her 100 tamamlanan kitapta bir evrim aşaması
+    const asama = evrimAsamasi(tamamlananSayisi);
+    let hayvanHtml;
+
+    if (asama < 0) {
+      const kalan = 100 - tamamlananSayisi;
+      hayvanHtml = `<div class="hayvanKilit">🔒 ${kalan} kitap daha tamamlayınca büyülü bir dost kazanacaksın!</div>`;
+    } else if (!evcilHayvanlar[isim]) {
+      hayvanHtml = `
+        <div class="hayvanSecim">
+          <p>🎉 Büyülü bir dost kazandın! Birini seç:</p>
+          <div class="hayvanSecenekleri">
+            ${Object.entries(HAYVAN_TURLERI).map(([key, tur]) => `
+              <button class="hayvanSecBtn" data-isim="${escapeHtml(isim)}" data-tur="${key}" title="${escapeHtml(tur.ad)}">${tur.asamalar[0].emoji}</button>
+            `).join('')}
+          </div>
+        </div>`;
+    } else {
+      const tur = HAYVAN_TURLERI[evcilHayvanlar[isim]];
+      const mevcut = tur.asamalar[asama];
+      const sonrakiEsik = EVRIM_ESIKLERI[asama + 1];
+      const oncekiEsik = EVRIM_ESIKLERI[asama];
+      const efsaneMi = asama === EVRIM_ESIKLERI.length - 1;
+
+      hayvanHtml = `
+        <div class="hayvanKart ${efsaneMi ? 'efsanevi' : ''}">
+          <div class="hayvanEmoji hayvanAsama${asama}">${mevcut.emoji}</div>
+          <div class="hayvanAd">${escapeHtml(mevcut.ad)}</div>
+          ${sonrakiEsik !== undefined
+            ? `<div class="hayvanIlerleme"><div class="hayvanIlerlemeDolu" style="width:${Math.min(100, Math.round(((tamamlananSayisi - oncekiEsik) / (sonrakiEsik - oncekiEsik)) * 100))}%"></div></div>
+               <div class="hayvanAlt">Sonraki evrime ${sonrakiEsik - tamamlananSayisi} kitap kaldı</div>`
+            : `<div class="hayvanAlt">✨ En yüksek evrime ulaştı!</div>`}
+        </div>`;
+    }
+
     return `
       <div class="kisiKart">
         <div class="kisiKartUst">
@@ -273,6 +387,12 @@ function kisiKartlariniOlustur() {
 
         <div class="rafBaslik">⭐ Toplanan Yıldızlar</div>
         <div class="yildizKutusu">${yildizlar || '<span class="rafBos">Henüz yıldız kazanılmadı</span>'}</div>
+
+        <div class="rafBaslik">🏆 Kupa Dolabı (${kupaAdedi})</div>
+        <div class="kupaKutusu">${kupaGosterim || `<span class="rafBos">İlk kupa için ${kupayaKalan} kitap daha!</span>`}</div>
+
+        <div class="rafBaslik">🐾 Büyülü Dostun</div>
+        ${hayvanHtml}
       </div>
     `;
   }).join('');
@@ -281,8 +401,10 @@ function kisiKartlariniOlustur() {
 const kisiKartlariAlani = document.getElementById('kisiKartlari');
 if (kisiKartlariAlani) {
   kisiKartlariAlani.addEventListener('click', e => {
-    const btn = e.target.closest('.kisiSilBtn');
-    if (btn) kisiSil(btn.dataset.isim);
+    const silBtn = e.target.closest('.kisiSilBtn');
+    const hayvanBtn = e.target.closest('.hayvanSecBtn');
+    if (silBtn) kisiSil(silBtn.dataset.isim);
+    if (hayvanBtn) evcilHayvanSec(hayvanBtn.dataset.isim, hayvanBtn.dataset.tur);
   });
 }
 

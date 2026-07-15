@@ -319,9 +319,110 @@ input:focus, select:focus { outline: none; border-color: var(--nebula); }
   padding: 8px;
   background: rgba(255,255,255,0.05);
   border-radius: 10px;
+  margin-bottom: 12px;
 }
 .yildizRozeti { font-size: 16px; cursor: default; }
 .rafBos { font-size: 12px; color: #7A73A8; padding: 4px; }
+
+/* ---- Kupa Dolabı ---- */
+.kupaKutusu {
+  font-size: 18px;
+  letter-spacing: 3px;
+  padding: 10px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+/* ---- Büyülü Dost (evcil hayvan) ---- */
+.hayvanKilit {
+  font-size: 12px;
+  color: #9B94C7;
+  padding: 12px;
+  text-align: center;
+  background: rgba(255,255,255,0.04);
+  border-radius: 12px;
+  line-height: 1.5;
+}
+
+.hayvanSecim { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 12px; }
+.hayvanSecim p { font-size: 12px; color: #EDE9FA; text-align: center; margin: 0 0 10px; }
+.hayvanSecenekleri { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+
+.hayvanSecBtn {
+  font-size: 26px;
+  line-height: 1;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: transform .15s ease, border-color .15s ease, background .15s ease;
+}
+.hayvanSecBtn:hover {
+  transform: translateY(-4px) scale(1.1);
+  border-color: var(--yildiz);
+  background: rgba(255,209,102,0.12);
+}
+
+.hayvanKart {
+  text-align: center;
+  background: rgba(255,255,255,0.05);
+  border-radius: 14px;
+  padding: 14px 12px 12px;
+}
+.hayvanKart.efsanevi {
+  background: linear-gradient(160deg, rgba(255,209,102,.20), rgba(108,74,182,.22));
+  border: 1px solid rgba(255,209,102,.45);
+}
+
+.hayvanEmoji {
+  display: inline-block;
+  font-size: 38px;
+  animation: hayvanSallan 2.4s ease-in-out infinite;
+}
+.hayvanAsama1 { font-size: 42px; animation-duration: 2.1s; }
+.hayvanAsama2 { font-size: 46px; animation-duration: 1.9s; }
+.hayvanAsama3 {
+  font-size: 50px;
+  animation: hayvanSallan 1.7s ease-in-out infinite, hayvanParla 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes hayvanSallan {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50%      { transform: translateY(-7px) rotate(4deg); }
+}
+@keyframes hayvanParla {
+  from { filter: drop-shadow(0 0 3px var(--yildiz)); }
+  to   { filter: drop-shadow(0 0 13px var(--yildiz)); }
+}
+
+.hayvanAd {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 13px;
+  color: #fff;
+  margin-top: 6px;
+}
+.hayvanIlerleme {
+  height: 8px;
+  background: #332B63;
+  border-radius: 999px;
+  margin-top: 9px;
+  overflow: hidden;
+}
+.hayvanIlerlemeDolu {
+  height: 100%;
+  background: linear-gradient(90deg, var(--basari), var(--yildiz));
+  border-radius: 999px;
+  transition: width .4s ease;
+}
+.hayvanAlt {
+  font-size: 10px;
+  color: #9B94C7;
+  margin-top: 5px;
+  font-family: 'Space Mono', monospace;
+}
 
 .bosDurum {
   padding: 22px;
@@ -487,4 +588,8 @@ body.dark .devamKisi { color: var(--yildiz); }
   .kart { padding: 16px; }
   .istatistikKart h2 { font-size: 22px; }
   .ucusYolu { height: 140px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hayvanEmoji, .hayvanAsama1, .hayvanAsama2, .hayvanAsama3 { animation: none; }
 }
