@@ -11,6 +11,7 @@ let evcilHayvanlar = JSON.parse(localStorage.getItem('evcilHayvanlar')) || {}; /
 
 let duzenlenenIndex = -1;
 let grafik = null;
+let gelisimGrafik = null;
 
 const RENKLER = ['#F6B93B', '#FF6F91', '#3DDC97', '#5D9CEC', '#B98CE0', '#FF9F43', '#5AC8FA'];
 const KULLANICI = "TALHA";
@@ -119,6 +120,41 @@ function evcilHayvanSec(isim, tur) {
   evcilHayvanlar[isim] = tur;
   kaydetEvcilHayvanlar();
   kisiKartlariniOlustur();
+}
+
+// ------------------------------------------------------------
+// GELİŞİM MESAJLARI (bu hafta / geçen hafta karşılaştırması)
+// ------------------------------------------------------------
+function haftalikSayfa(isim, kacGunOnce, kacGunSuresi) {
+  const bugun = new Date();
+  const bitis = new Date(bugun); bitis.setDate(bugun.getDate() - kacGunOnce);
+  const baslangic = new Date(bitis); baslangic.setDate(bitis.getDate() - kacGunSuresi);
+
+  return kayitlar
+    .filter(k => k.kisi === isim && k.tarih)
+    .filter(k => {
+      const t = new Date(k.tarih);
+      return t > baslangic && t <= bitis;
+    })
+    .reduce((toplam, k) => toplam + Number(k.okunanSayfa || 0), 0);
+}
+
+function gelisimMesajiOlustur(isim) {
+  const buHafta = haftalikSayfa(isim, 0, 7);
+  const gecenHafta = haftalikSayfa(isim, 7, 7);
+
+  if (buHafta === 0 && gecenHafta === 0) {
+    return { emoji: '🌱', metin: 'Yeni bir okuma haftasına başlamaya hazır mısın?' };
+  }
+  if (gecenHafta === 0) {
+    return { emoji: '🚀', metin: `Bu hafta ${buHafta} sayfa okudun — harika bir başlangıç!` };
+  }
+
+  const fark = Math.round(((buHafta - gecenHafta) / gecenHafta) * 100);
+
+  if (fark > 10) return { emoji: '📈', metin: `Bu hafta geçen haftaya göre %${fark} daha çok okudun. Süpersin!` };
+  if (fark >= -10) return { emoji: '⭐', metin: 'İstikrarlı gidiyorsun, böyle devam et!' };
+  return { emoji: '💪', metin: 'Bu hafta biraz yavaşladın ama her sayfa değerli, hadi devam edelim!' };
 }
 
 // ------------------------------------------------------------
@@ -364,6 +400,8 @@ function kisiKartlariniOlustur() {
         </div>`;
     }
 
+    const gelisim = gelisimMesajiOlustur(isim);
+
     return `
       <div class="kisiKart">
         <div class="kisiKartUst">
@@ -371,6 +409,7 @@ function kisiKartlariniOlustur() {
           <button class="kisiSilBtn" data-isim="${escapeHtml(isim)}" title="Kaşifi Sil">✕</button>
         </div>
         <div class="rozet">${rozet.emoji} ${rozet.ad}</div>
+        <div class="gelisimMesaji">${gelisim.emoji} ${gelisim.metin}</div>
 
         <div class="ucusPaneli">
           <div class="ucusYolu">
@@ -671,6 +710,116 @@ function grafikGuncelle() {
 }
 
 // ------------------------------------------------------------
+// GELİŞİM GRAFİĞİ (zaman içinde kümülatif sayfa — kaşif başına çizgi)
+// ------------------------------------------------------------
+function gelisimVerisiHazirla() {
+  const tarihSet = new Set(kayitlar.map(k => k.tarih).filter(Boolean));
+  const tarihler = Array.from(tarihSet).sort();
+
+  const seriler = kisiler.map((isim, i) => {
+    let kumulatif = 0;
+    const veri = tarihler.map(tarih => {
+      kumulatif += kayitlar
+        .filter(k => k.kisi === isim && k.tarih === tarih)
+        .reduce((t, k) => t + Number(k.okunanSayfa || 0), 0);
+      return kumulatif;
+    });
+    return {
+      label: isim,
+      data: veri,
+      borderColor: RENKLER[i % RENKLER.length],
+      backgroundColor: RENKLER[i % RENKLER.length] + '33',
+      tension: 0.35,
+      fill: false,
+      pointRadius: 3,
+    };
+  });
+
+  return { tarihler, seriler };
+}
+
+function gelisimGrafikGuncelle() {
+  const ctx = document.getElementById('gelisimGrafik');
+  const bosMesaj = document.getElementById('gelisimGrafikBos');
+  if (!ctx) return;
+  if (gelisimGrafik) gelisimGrafik.destroy();
+
+  const { tarihler, seriler } = gelisimVerisiHazirla();
+
+  if (tarihler.length < 2 || kisiler.length === 0) {
+    ctx.style.display = 'none';
+    if (bosMesaj) bosMesaj.style.display = 'block';
+    return;
+  }
+
+  ctx.style.display = 'block';
+  if (bosMesaj) bosMesaj.style.display = 'none';
+
+  gelisimGrafik = new Chart(ctx, {
+    type: 'line',
+    data: { labels: tarihler.map(formatTarih), datasets: seriler },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12 } } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Toplam Sayfa' } } }
+    }
+  });
+}
+
+// ------------------------------------------------------------
+// ÖDÜLLER REHBERİ (tüm ödüller ve nasıl kazanıldıkları)
+// ------------------------------------------------------------
+function odullerRehberiniGoster() {
+  const alan = document.getElementById('odullerRehberi');
+  if (!alan) return;
+
+  const rozetSatirlari = KILOMETRE_TASLARI.map(k => `
+    <div class="oduTanim">
+      <span class="oduEmoji">${k.emoji}</span>
+      <div><strong>${escapeHtml(k.ad)}</strong><span>Toplamda ${k.sinir}+ sayfa okuyunca kazanılır</span></div>
+    </div>
+  `).join('');
+
+  const hayvanBlok = Object.values(HAYVAN_TURLERI).map(tur => `
+    <div class="oduHayvanAile">
+      <strong>${escapeHtml(tur.ad)}</strong>
+      <div class="oduHayvanZinciri">
+        ${tur.asamalar.map((a, i) => `
+          <div class="oduHayvanAsama">
+            <span class="oduHayvanEmoji">${a.emoji}</span>
+            <span>${escapeHtml(a.ad)}</span>
+            <small>${EVRIM_ESIKLERI[i]}+ kitap</small>
+          </div>
+          ${i < tur.asamalar.length - 1 ? '<span class="oduOk">→</span>' : ''}
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  alan.innerHTML = `
+    <h3 class="oduBaslik">🌟 Kaşif Rozetleri <span class="oduAltbilgi">(toplam okunan sayfaya göre)</span></h3>
+    <div class="oduListesi">${rozetSatirlari}</div>
+
+    <h3 class="oduBaslik">🏆 Kupa Dolabı</h3>
+    <div class="oduTanim">
+      <span class="oduEmoji">🏆</span>
+      <div><strong>Okuma Kupası</strong><span>Her 50 tamamlanan kitapta 1 kupa kazanılır. Kupa sayısı sınırsız artar!</span></div>
+    </div>
+
+    <h3 class="oduBaslik">🐾 Büyülü Dost</h3>
+    <p class="oduAciklama">100 kitap tamamlayınca bir büyülü dost seçilir: Kedi, Kertenkele, Kurt, Kuş veya Balık. Her 100 kitapta bir üst forma evrim geçirir:</p>
+    <div class="oduHayvanListesi">${hayvanBlok}</div>
+
+    <h3 class="oduBaslik">📈 Gelişim Mesajları</h3>
+    <div class="oduTanim">
+      <span class="oduEmoji">⭐</span>
+      <div><strong>Haftalık Karşılaştırma</strong><span>Her kaşifin kartında, bu haftaki okuması geçen haftayla karşılaştırılıp teşvik edici bir mesaj gösterilir.</span></div>
+    </div>
+  `;
+}
+
+// ------------------------------------------------------------
 // DOSYA İŞLEMLERİ (kayda ek dosya + genel dosya arşivi)
 // PDF ve Excel dosyaları base64 olarak tarayıcıda (localStorage) saklanır.
 // ------------------------------------------------------------
@@ -889,5 +1038,7 @@ function tumunuGuncelle() {
   devamEdenKitaplariGoster();
   kitapArsiviniGoster();
   grafikGuncelle();
+  gelisimGrafikGuncelle();
   dosyaArsiviniGoster();
+  odullerRehberiniGoster();
 }

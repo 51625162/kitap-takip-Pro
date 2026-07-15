@@ -250,7 +250,7 @@ input:focus, select:focus { outline: none; border-color: var(--nebula); }
 
 .rozet {
   display: inline-block;
-  margin: 6px 0 14px;
+  margin: 6px 0 8px;
   padding: 4px 10px;
   border-radius: 999px;
   background: var(--yildiz);
@@ -258,6 +258,16 @@ input:focus, select:focus { outline: none; border-color: var(--nebula); }
   font-size: 12px;
   font-weight: 700;
   font-family: 'Fredoka', sans-serif;
+}
+
+.gelisimMesaji {
+  font-size: 12px;
+  color: #C9C2EE;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 14px;
+  line-height: 1.4;
 }
 
 /* Uçuş yolu: dikey roket-yükselme çubuğu, gezegen kilometre taşlarıyla */
@@ -567,6 +577,54 @@ table button:hover { background: #ECE7F8; }
 .istatistikKart h2 { font-family: 'Space Mono', monospace; font-size: 28px; color: var(--yildiz); }
 
 footer { text-align: center; color: var(--gri); font-size: 13px; padding: 10px 0 0; }
+
+/* ---------------- ÖDÜLLER REHBERİ ---------------- */
+.oduBaslik {
+  font-size: 15px;
+  color: var(--uzay-orta);
+  margin: 18px 0 10px;
+}
+.oduBaslik:first-child { margin-top: 0; }
+.oduAltbilgi { font-size: 11px; color: var(--gri); font-weight: 400; font-family: 'Quicksand', sans-serif; }
+.oduAciklama { font-size: 13px; color: var(--gri); margin: 0 0 12px; }
+
+.oduListesi { display: flex; flex-direction: column; gap: 8px; }
+
+.oduTanim {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #F8F6FD;
+  border: 1px solid #ECE7F8;
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.oduEmoji { font-size: 24px; }
+.oduTanim strong { display: block; font-size: 13px; color: var(--metin); }
+.oduTanim span { font-size: 12px; color: var(--gri); }
+
+.oduHayvanListesi { display: flex; flex-direction: column; gap: 14px; }
+.oduHayvanAile {
+  background: #F8F6FD;
+  border: 1px solid #ECE7F8;
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.oduHayvanAile > strong { display: block; font-size: 13px; color: var(--metin); margin-bottom: 8px; }
+
+.oduHayvanZinciri { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.oduHayvanAsama {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 74px;
+  font-size: 11px;
+  color: var(--gri);
+}
+.oduHayvanEmoji { font-size: 26px; margin-bottom: 2px; }
+.oduHayvanAsama small { font-family: 'Space Mono', monospace; color: var(--nebula); font-size: 10px; }
+.oduOk { color: #CFC6EA; font-size: 16px; }
 
 /* ---------------- KARANLIK MOD (yardımcı bölümler için) ---------------- */
 body.dark { background: #14112B; color: #E7E2F5; }
