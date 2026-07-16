@@ -1,24 +1,36 @@
 // ============================================================
-//  KİTAP TAKİP PRO — Okuma Macerası
-//  Veri: localStorage ('kitapKayitlari', 'kisiler', 'dosyaArsivi')
-//  Eski verilerle tam uyumlu — hiçbir kayıt silinmez.
+//  OKUMA ROKETİ — Kitap Takip
+//  Veri kullanıcı bazlı ayrılır: TALHA ve ZEYNEP birbirinden
+//  tamamen bağımsız kendi kayıtlarını görür (localStorage anahtarı
+//  kullanıcı adına göre son ek alır, örn. 'kitapKayitlari_TALHA').
+//  Eski (kullanıcısız) veriler otomatik olarak TALHA'ya taşınır —
+//  hiçbir kayıt silinmez.
 // ============================================================
 
-let kayitlar   = JSON.parse(localStorage.getItem('kitapKayitlari')) || [];
-let kisiler    = JSON.parse(localStorage.getItem('kisiler')) || [];
-let dosyaArsivi = JSON.parse(localStorage.getItem('dosyaArsivi')) || [];
-let evcilHayvanlar = JSON.parse(localStorage.getItem('evcilHayvanlar')) || {}; // { "İsim": "kedi" }
+const KULLANICILAR = {
+  TALHA: { sifre: '54321' },
+  ZEYNEP: { sifre: '190344' },
+};
+
+let aktifKullanici = localStorage.getItem('aktifKullanici') || null;
+
+let kayitlar = [];
+let kisiler = [];
+let dosyaArsivi = [];
+let evcilHayvanlar = {}; // { "İsim": "kedi" }
+let evrimGosterildi = {}; // { "İsim": son gösterilen evrim aşaması } — ses/kutlama tekrarını önler
 
 let duzenlenenIndex = -1;
 let grafik = null;
 let gelisimGrafik = null;
 
 const RENKLER = ['#F6B93B', '#FF6F91', '#3DDC97', '#5D9CEC', '#B98CE0', '#FF9F43', '#5AC8FA'];
-const KULLANICI = "TALHA";
-const SIFRE = "54321";
+
+// Kupa: her KAÇ tamamlanan kitapta bir kupa kazanılır.
+const KUPA_ARALIGI = 25;
 
 // Evrim eşikleri: bu kadar KİTAP TAMAMLAYINCA hayvan bir üst forma geçer.
-const EVRIM_ESIKLERI = [100, 200, 300, 400];
+const EVRIM_ESIKLERI = [50, 100, 150, 200];
 
 const HAYVAN_TURLERI = {
   kedi: {
@@ -96,17 +108,50 @@ function boyutFormatla(bayt) {
   return (bayt / 1024 / 1024).toFixed(1) + ' MB';
 }
 
+// ------------------------------------------------------------
+// KULLANICI BAZLI VERİ (her hesap kendi anahtarını kullanır)
+// ------------------------------------------------------------
+function anahtar(taban) {
+  return `${taban}_${aktifKullanici}`;
+}
+
+function eskiVeriyiTalhaTasi() {
+  // İlk sürümde tek kullanıcı vardı ve anahtarlar son ek almıyordu.
+  // Bu veriyi kaybetmemek için bir kereliğine TALHA hesabına kopyalıyoruz.
+  ['kitapKayitlari', 'kisiler', 'dosyaArsivi', 'evcilHayvanlar'].forEach(taban => {
+    const eski = localStorage.getItem(taban);
+    const yeniAnahtar = `${taban}_TALHA`;
+    if (eski && !localStorage.getItem(yeniAnahtar)) {
+      localStorage.setItem(yeniAnahtar, eski);
+    }
+  });
+}
+
+function verileriYukle() {
+  if (aktifKullanici === 'TALHA') eskiVeriyiTalhaTasi();
+
+  kayitlar = JSON.parse(localStorage.getItem(anahtar('kitapKayitlari'))) || [];
+  kisiler = JSON.parse(localStorage.getItem(anahtar('kisiler'))) || [];
+  dosyaArsivi = JSON.parse(localStorage.getItem(anahtar('dosyaArsivi'))) || [];
+  evcilHayvanlar = JSON.parse(localStorage.getItem(anahtar('evcilHayvanlar'))) || {};
+  evrimGosterildi = JSON.parse(localStorage.getItem(anahtar('evrimGosterildi'))) || {};
+}
+
 function kaydetVeri() {
-  localStorage.setItem('kitapKayitlari', JSON.stringify(kayitlar));
-  localStorage.setItem('kisiler', JSON.stringify(kisiler));
+  localStorage.setItem(anahtar('kitapKayitlari'), JSON.stringify(kayitlar));
+  localStorage.setItem(anahtar('kisiler'), JSON.stringify(kisiler));
 }
 
 function kaydetDosyaArsivi() {
-  localStorage.setItem('dosyaArsivi', JSON.stringify(dosyaArsivi));
+  localStorage.setItem(anahtar('dosyaArsivi'), JSON.stringify(dosyaArsivi));
 }
 
 function kaydetEvcilHayvanlar() {
-  localStorage.setItem('evcilHayvanlar', JSON.stringify(evcilHayvanlar));
+  localStorage.setItem(anahtar('evcilHayvanlar'), JSON.stringify(evcilHayvanlar));
+}
+
+function kaydetEvrimGosterildi() {
+  localStorage.setItem(anahtar('evrimGosterildi'), JSON.stringify(evrimGosterildi));
 }
 
 function evrimAsamasi(kitapSayisi) {
@@ -158,11 +203,99 @@ function gelisimMesajiOlustur(isim) {
 }
 
 // ------------------------------------------------------------
+// HAYVAN SESLERİ (Web Audio API ile sentezlenir — dosya indirmez,
+// tamamen offline çalışır, telif hakkı sorunu yaratmaz)
+// ------------------------------------------------------------
+let sesBaglami = null;
+
+function sesBaglaminiAl() {
+  if (!sesBaglami) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) {
+      try { sesBaglami = new AC(); } catch (e) { sesBaglami = null; }
+    }
+  }
+  if (sesBaglami && sesBaglami.state === 'suspended') {
+    sesBaglami.resume().catch(() => {});
+  }
+  return sesBaglami;
+}
+
+function tonCal(frekans, sure, tur = 'sine', gecikme = 0, sesSeviyesi = 0.2) {
+  const ctx = sesBaglaminiAl();
+  if (!ctx) return;
+  try {
+    const osc = ctx.createOscillator();
+    const kazanc = ctx.createGain();
+    osc.type = tur;
+    osc.frequency.setValueAtTime(frekans, ctx.currentTime + gecikme);
+    kazanc.gain.setValueAtTime(0, ctx.currentTime + gecikme);
+    kazanc.gain.linearRampToValueAtTime(sesSeviyesi, ctx.currentTime + gecikme + 0.02);
+    kazanc.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + gecikme + sure);
+    osc.connect(kazanc).connect(ctx.destination);
+    osc.start(ctx.currentTime + gecikme);
+    osc.stop(ctx.currentTime + gecikme + sure + 0.03);
+  } catch (e) { /* sessizce yoksay */ }
+}
+
+function kaymaliTonCal(baslangic, bitis, sure, tur = 'sine', sesSeviyesi = 0.22, gecikme = 0) {
+  const ctx = sesBaglaminiAl();
+  if (!ctx) return;
+  try {
+    const osc = ctx.createOscillator();
+    const kazanc = ctx.createGain();
+    osc.type = tur;
+    osc.frequency.setValueAtTime(baslangic, ctx.currentTime + gecikme);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(bitis, 1), ctx.currentTime + gecikme + sure);
+    kazanc.gain.setValueAtTime(0, ctx.currentTime + gecikme);
+    kazanc.gain.linearRampToValueAtTime(sesSeviyesi, ctx.currentTime + gecikme + 0.03);
+    kazanc.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + gecikme + sure);
+    osc.connect(kazanc).connect(ctx.destination);
+    osc.start(ctx.currentTime + gecikme);
+    osc.stop(ctx.currentTime + gecikme + sure + 0.03);
+  } catch (e) { /* sessizce yoksay */ }
+}
+
+const HAYVAN_SESLERI = {
+  kedi: (asama) => {
+    const carpan = 1 + asama * 0.18;
+    tonCal(500 * carpan, 0.12, 'sine', 0, 0.2);
+    tonCal(660 * carpan, 0.18, 'sine', 0.12, 0.2);
+  },
+  kertenkele: (asama) => {
+    const derinlik = 150 - asama * 25;
+    kaymaliTonCal(derinlik, derinlik * 0.55, 0.55 + asama * 0.15, 'sawtooth', 0.22);
+    if (asama >= 2) tonCal(950, 0.12, 'square', 0.35, 0.12);
+  },
+  kurt: (asama) => {
+    const tepe = 300 + asama * 45;
+    kaymaliTonCal(tepe * 0.55, tepe, 0.2, 'sine', 0.18);
+    kaymaliTonCal(tepe, tepe * 0.45, 0.65 + asama * 0.1, 'sine', 0.2, 0.2);
+  },
+  kus: (asama) => {
+    const taban = 900 + asama * 110;
+    tonCal(taban, 0.08, 'triangle', 0, 0.18);
+    tonCal(taban * 1.2, 0.08, 'triangle', 0.09, 0.18);
+    tonCal(taban * 1.4, 0.1, 'triangle', 0.18, 0.18);
+  },
+  balik: (asama) => {
+    for (let i = 0; i < 3; i++) tonCal(700 + Math.random() * 300 + asama * 60, 0.08, 'sine', i * 0.09, 0.15);
+  },
+};
+
+function hayvanSesiCal(tur, asama) {
+  const fn = HAYVAN_SESLERI[tur];
+  if (fn) fn(Math.max(0, Number(asama) || 0));
+}
+
+// ------------------------------------------------------------
 // BAŞLATMA / GİRİŞ
 // ------------------------------------------------------------
 window.onload = function () {
-  if (localStorage.getItem("girisYapildi") === "true") {
+  if (localStorage.getItem("girisYapildi") === "true" && aktifKullanici && KULLANICILAR[aktifKullanici]) {
+    verileriYukle();
     girisGoster(false);
+    aktifKullaniciEtiketiniGuncelle();
   } else {
     girisGoster(true);
   }
@@ -182,6 +315,11 @@ function girisGoster(goster) {
   document.getElementById("uygulama").style.display = goster ? "none" : "block";
 }
 
+function aktifKullaniciEtiketiniGuncelle() {
+  const etiket = document.getElementById('aktifKullaniciEtiketi');
+  if (etiket) etiket.innerText = aktifKullanici ? `👤 ${aktifKullanici}` : '';
+}
+
 function bugununTarihiniAyarla() {
   const t = document.getElementById('tarih');
   if (t && !t.value) t.value = bugunYYYYMMDD();
@@ -190,13 +328,18 @@ function bugununTarihiniAyarla() {
 const girisBtn = document.getElementById("girisBtn");
 if (girisBtn) {
   girisBtn.addEventListener("click", function () {
-    const kullanici = document.getElementById("kullaniciAdi").value.trim();
+    const girilenAd = document.getElementById("kullaniciAdi").value.trim().toUpperCase();
     const sifre = document.getElementById("sifre").value.trim();
+    const hesap = KULLANICILAR[girilenAd];
 
-    if (kullanici === KULLANICI && sifre === SIFRE) {
+    if (hesap && hesap.sifre === sifre) {
+      aktifKullanici = girilenAd;
+      localStorage.setItem("aktifKullanici", aktifKullanici);
       localStorage.setItem("girisYapildi", "true");
       document.getElementById("hata").innerText = "";
+      verileriYukle();
       girisGoster(false);
+      aktifKullaniciEtiketiniGuncelle();
       tumunuGuncelle();
     } else {
       document.getElementById("hata").innerText = "Kullanıcı adı veya şifre yanlış!";
@@ -221,6 +364,9 @@ if (cikisBtn) {
       localStorage.removeItem("girisYapildi");
       girisGoster(true);
       document.getElementById("sifre").value = '';
+      document.getElementById("kullaniciAdi").value = '';
+      const etiket = document.getElementById('aktifKullaniciEtiketi');
+      if (etiket) etiket.innerText = '';
     }
   });
 }
@@ -268,8 +414,10 @@ function kisiSil(isim) {
   kisiler = kisiler.filter(k => k !== isim);
   kayitlar = kayitlar.filter(k => k.kisi !== isim);
   delete evcilHayvanlar[isim];
+  delete evrimGosterildi[isim];
   kaydetVeri();
   kaydetEvcilHayvanlar();
+  kaydetEvrimGosterildi();
   tumunuGuncelle();
 }
 
@@ -357,28 +505,31 @@ function kisiKartlariniOlustur() {
       `<span class="yildizRozeti" title="${escapeHtml(kt.kitap)} — ${escapeHtml(kt.yazar || 'Yazar bilinmiyor')}">⭐</span>`
     ).join('');
 
-    // Kupa Dolabı — her 50 tamamlanan kitapta bir kupa
+    // Kupa Dolabı — her KUPA_ARALIGI tamamlanan kitapta bir kupa
     const tamamlananSayisi = ist.tamamlanan.length;
-    const kupaAdedi = Math.floor(tamamlananSayisi / 50);
+    const kupaAdedi = Math.floor(tamamlananSayisi / KUPA_ARALIGI);
     const kupaGosterim = kupaAdedi > 0
       ? Array(Math.min(kupaAdedi, 8)).fill('🏆').join('') + (kupaAdedi > 8 ? ` +${kupaAdedi - 8}` : '')
       : '';
-    const kupayaKalan = 50 - (tamamlananSayisi % 50);
+    const kupayaKalan = KUPA_ARALIGI - (tamamlananSayisi % KUPA_ARALIGI);
 
-    // Büyülü Dost — her 100 tamamlanan kitapta bir evrim aşaması
+    // Büyülü Dost — her EVRIM_ESIKLERI[i] tamamlanan kitapta bir evrim aşaması
     const asama = evrimAsamasi(tamamlananSayisi);
     let hayvanHtml;
 
     if (asama < 0) {
-      const kalan = 100 - tamamlananSayisi;
+      const kalan = EVRIM_ESIKLERI[0] - tamamlananSayisi;
       hayvanHtml = `<div class="hayvanKilit">🔒 ${kalan} kitap daha tamamlayınca büyülü bir dost kazanacaksın!</div>`;
     } else if (!evcilHayvanlar[isim]) {
       hayvanHtml = `
         <div class="hayvanSecim">
-          <p>🎉 Büyülü bir dost kazandın! Birini seç:</p>
+          <p>🎉 Büyülü bir dost kazandın! Birini seç (🔊 ile sesini dinleyebilirsin):</p>
           <div class="hayvanSecenekleri">
             ${Object.entries(HAYVAN_TURLERI).map(([key, tur]) => `
-              <button class="hayvanSecBtn" data-isim="${escapeHtml(isim)}" data-tur="${key}" title="${escapeHtml(tur.ad)}">${tur.asamalar[0].emoji}</button>
+              <div class="hayvanSecenek">
+                <button class="hayvanSecBtn" data-isim="${escapeHtml(isim)}" data-tur="${key}" title="${escapeHtml(tur.ad)} — seçmek için tıkla">${tur.asamalar[0].emoji}</button>
+                <button class="hayvanOnizlemeBtn" data-tur="${key}" data-asama="0" title="Sesini dinle">🔊</button>
+              </div>
             `).join('')}
           </div>
         </div>`;
@@ -389,10 +540,18 @@ function kisiKartlariniOlustur() {
       const oncekiEsik = EVRIM_ESIKLERI[asama];
       const efsaneMi = asama === EVRIM_ESIKLERI.length - 1;
 
+      // Yeni bir evrim aşamasına ilk kez ulaşıldığında kutlama sesi çal
+      if ((evrimGosterildi[isim] ?? -1) < asama) {
+        evrimGosterildi[isim] = asama;
+        kaydetEvrimGosterildi();
+        setTimeout(() => hayvanSesiCal(evcilHayvanlar[isim], asama), 300);
+      }
+
       hayvanHtml = `
         <div class="hayvanKart ${efsaneMi ? 'efsanevi' : ''}">
           <div class="hayvanEmoji hayvanAsama${asama}">${mevcut.emoji}</div>
           <div class="hayvanAd">${escapeHtml(mevcut.ad)}</div>
+          <button class="hayvanSesBtn" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}">🔊 Sesini Dinle</button>
           ${sonrakiEsik !== undefined
             ? `<div class="hayvanIlerleme"><div class="hayvanIlerlemeDolu" style="width:${Math.min(100, Math.round(((tamamlananSayisi - oncekiEsik) / (sonrakiEsik - oncekiEsik)) * 100))}%"></div></div>
                <div class="hayvanAlt">Sonraki evrime ${sonrakiEsik - tamamlananSayisi} kitap kaldı</div>`
@@ -442,8 +601,12 @@ if (kisiKartlariAlani) {
   kisiKartlariAlani.addEventListener('click', e => {
     const silBtn = e.target.closest('.kisiSilBtn');
     const hayvanBtn = e.target.closest('.hayvanSecBtn');
+    const sesBtn = e.target.closest('.hayvanSesBtn');
+    const onizlemeBtn = e.target.closest('.hayvanOnizlemeBtn');
     if (silBtn) kisiSil(silBtn.dataset.isim);
     if (hayvanBtn) evcilHayvanSec(hayvanBtn.dataset.isim, hayvanBtn.dataset.tur);
+    if (sesBtn) hayvanSesiCal(sesBtn.dataset.tur, sesBtn.dataset.asama);
+    if (onizlemeBtn) hayvanSesiCal(onizlemeBtn.dataset.tur, onizlemeBtn.dataset.asama);
   });
 }
 
@@ -804,11 +967,11 @@ function odullerRehberiniGoster() {
     <h3 class="oduBaslik">🏆 Kupa Dolabı</h3>
     <div class="oduTanim">
       <span class="oduEmoji">🏆</span>
-      <div><strong>Okuma Kupası</strong><span>Her 50 tamamlanan kitapta 1 kupa kazanılır. Kupa sayısı sınırsız artar!</span></div>
+      <div><strong>Okuma Kupası</strong><span>Her ${KUPA_ARALIGI} tamamlanan kitapta 1 kupa kazanılır. Kupa sayısı sınırsız artar!</span></div>
     </div>
 
     <h3 class="oduBaslik">🐾 Büyülü Dost</h3>
-    <p class="oduAciklama">100 kitap tamamlayınca bir büyülü dost seçilir: Kedi, Kertenkele, Kurt, Kuş veya Balık. Her 100 kitapta bir üst forma evrim geçirir:</p>
+    <p class="oduAciklama">${EVRIM_ESIKLERI[0]} kitap tamamlayınca bir büyülü dost seçilir: Kedi, Kertenkele, Kurt, Kuş veya Balık. Her ${EVRIM_ESIKLERI[0]} kitapta bir üst forma evrim geçirir. Her hayvanın kendine özgü bir sesi var — 🔊 düğmesine basarak dinleyebilirsin:</p>
     <div class="oduHayvanListesi">${hayvanBlok}</div>
 
     <h3 class="oduBaslik">📈 Gelişim Mesajları</h3>
