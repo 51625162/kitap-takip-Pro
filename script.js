@@ -1382,7 +1382,7 @@ function ulkeleriGoster() {
   const alan = document.getElementById('atlas-ulkeler');
   if (!alan) return;
 
-  alan.innerHTML = ULKELER.map(u => `
+  alan.innerHTML = ULKELER.map((u, i) => `
     <div class="ulkeKart">
       <div class="ulkeUst">
         <span class="ulkeGorsel">${u.gorsel}</span>
@@ -1396,6 +1396,83 @@ function ulkeleriGoster() {
         <div class="ulkeOzellik"><strong>${u.hayvan.emoji} ${escapeHtml(u.hayvan.ad)}</strong><span>${escapeHtml(u.hayvan.bilgi)}</span></div>
       </div>
       <div class="ulkeNot">💡 ${escapeHtml(u.bilgiNotu)}</div>
+      <button class="ulkeDetayBtn" data-tip="ulke" data-index="${i}" type="button">🔎 Sayfasını Aç</button>
+    </div>
+  `).join('');
+}
+
+// Türkiye'nin kendi şehir/bölge atlası — aynı kart yapısını kullanır,
+// yeni bir şehir eklemek için sadece TURKIYE_SEHIRLERI dizisine ekleme yapmak yeterlidir.
+const TURKIYE_SEHIRLERI = [
+  {
+    gorsel: '🕌', ad: 'İstanbul', bolge: 'Marmara Bölgesi',
+    mekan: { ad: 'Ayasofya', bilgi: 'Önce kilise, sonra cami, şimdi hem cami hem müze olarak ziyaret edilen muhteşem bir tarihi yapıdır.' },
+    hayvan: { emoji: '🐬', ad: 'Boğaz Yunusları', bilgi: 'İstanbul Boğazı\'nda zaman zaman yunusların suda oynadığı görülebilir.' },
+    bilgiNotu: 'İstanbul, dünyada iki kıtaya (Asya ve Avrupa) birden yayılan tek büyük şehirdir!',
+  },
+  {
+    gorsel: '🏛️', ad: 'Ankara', bolge: 'İç Anadolu Bölgesi',
+    mekan: { ad: 'Anıtkabir', bilgi: 'Atatürk\'ün anıt mezarıdır; görkemli sütunları ve geniş meydanıyla bilinir.' },
+    hayvan: { emoji: '🐐', ad: 'Ankara Keçisi', bilgi: 'Yumuşacık ve parlak tiftik yünüyle tanınan özel bir keçi türüdür.' },
+    bilgiNotu: 'Ankara, Türkiye Cumhuriyeti\'nin başkentidir.',
+  },
+  {
+    gorsel: '🎈', ad: 'Kapadokya (Nevşehir)', bolge: 'İç Anadolu Bölgesi',
+    mekan: { ad: 'Peribacaları', bilgi: 'Rüzgar ve suyun binlerce yılda şekillendirdiği sivri, ilginç kaya sütunlarıdır.' },
+    hayvan: { emoji: '🦉', ad: 'Puhu Kuşu', bilgi: 'Kayalık vadilerde yaşayan, büyük gözleriyle dikkat çeken bir baykuş türüdür.' },
+    bilgiNotu: 'Kapadokya\'nın altında koca yer altı şehirleri vardır — eskiden insanlar buralara sığınırmış!',
+  },
+  {
+    gorsel: '🏖️', ad: 'Antalya', bolge: 'Akdeniz Bölgesi',
+    mekan: { ad: 'Düden Şelalesi', bilgi: 'Bir kısmı doğrudan denize dökülen, seyretmesi büyüleyici bir şelaledir.' },
+    hayvan: { emoji: '🐢', ad: 'Caretta Caretta', bilgi: 'Antalya sahillerine yumurtlamaya gelen, nesli korunması gereken bir deniz kaplumbağasıdır.' },
+    bilgiNotu: 'Antalya, Türkiye\'nin en güneşli günü olan şehirlerinden biridir.',
+  },
+  {
+    gorsel: '🍵', ad: 'Rize', bolge: 'Karadeniz Bölgesi',
+    mekan: { ad: 'Çay Bahçeleri', bilgi: 'Yemyeşil tepelere sıra sıra dizilmiş çay tarlaları Rize\'nin simgesidir.' },
+    hayvan: { emoji: '🐝', ad: 'Kafkas Arısı', bilgi: 'Karadeniz\'e özgü, lezzetli bal üreten çalışkan bir arı türüdür.' },
+    bilgiNotu: 'Türkiye, dünyanın en çok çay tüketen ülkelerinden biridir!',
+  },
+  {
+    gorsel: '🏺', ad: 'İzmir', bolge: 'Ege Bölgesi',
+    mekan: { ad: 'Efes Antik Kenti', bilgi: 'Antik çağın en görkemli şehirlerinden biriydi; Celsus Kütüphanesi\'nin cephesi hâlâ ayaktadır.' },
+    hayvan: { emoji: '🐟', ad: 'Ege Balıkları', bilgi: 'Ege Denizi; çipura, levrek gibi pek çok balık türüne ev sahipliği yapar.' },
+    bilgiNotu: 'İzmir, Türkiye\'nin en eski yerleşim yerlerinden birine sahiptir.',
+  },
+  {
+    gorsel: '🕋', ad: 'Mardin', bolge: 'Güneydoğu Anadolu Bölgesi',
+    mekan: { ad: 'Taş Evler', bilgi: 'Sarımsı taşlardan yapılmış, yamaca basamak basamak dizilmiş tarihi evleriyle ünlüdür.' },
+    hayvan: { emoji: '🦎', ad: 'Bölge Kertenkeneleri', bilgi: 'Sıcak ikliminde birçok farklı sürüngen türü yaşar.' },
+    bilgiNotu: 'Mardin\'in tarihi çarşısında yüzyıllardır bakırcılık gibi eski zanaatlar sürdürülür.',
+  },
+  {
+    gorsel: '🌹', ad: 'Konya', bolge: 'İç Anadolu Bölgesi',
+    mekan: { ad: 'Mevlana Türbesi', bilgi: 'Ünlü şair ve düşünür Mevlana\'nın anısına yapılmış, yeşil kubbesiyle tanınan tarihi bir yapıdır.' },
+    hayvan: { emoji: '🐑', ad: 'Karaman Koyunu', bilgi: 'Bölgede yaygın olarak yetiştirilen dayanıklı bir koyun türüdür.' },
+    bilgiNotu: 'Konya, Türkiye\'nin en geniş tahıl ovalarından bazılarına sahiptir.',
+  },
+];
+
+function turkiyeSehirleriniGoster() {
+  const alan = document.getElementById('atlas-turkiye');
+  if (!alan) return;
+
+  alan.innerHTML = TURKIYE_SEHIRLERI.map((s, i) => `
+    <div class="ulkeKart">
+      <div class="ulkeUst">
+        <span class="ulkeGorsel">${s.gorsel}</span>
+        <div>
+          <h3>🇹🇷 ${escapeHtml(s.ad)}</h3>
+          <span class="ulkeAltbilgi">${escapeHtml(s.bolge)}</span>
+        </div>
+      </div>
+      <div class="ulkeDetay">
+        <div class="ulkeOzellik"><strong>📍 ${escapeHtml(s.mekan.ad)}</strong><span>${escapeHtml(s.mekan.bilgi)}</span></div>
+        <div class="ulkeOzellik"><strong>${s.hayvan.emoji} ${escapeHtml(s.hayvan.ad)}</strong><span>${escapeHtml(s.hayvan.bilgi)}</span></div>
+      </div>
+      <div class="ulkeNot">💡 ${escapeHtml(s.bilgiNotu)}</div>
+      <button class="ulkeDetayBtn" data-tip="sehir" data-index="${i}" type="button">🔎 Sayfasını Aç</button>
     </div>
   `).join('');
 }
@@ -1431,6 +1508,80 @@ document.querySelectorAll('.atlasSekmeBtn').forEach(btn => {
   btn.addEventListener('click', () => atlasSekmesiGoster(btn.dataset.sekme));
 });
 
+// ------------------------------------------------------------
+// ATLAS DETAY PENCERESİ — bir karta basınca büyük "sayfa" gibi açılır
+// ------------------------------------------------------------
+function atlasDetayAc(baslik, altbilgi, gorsel, mekan, hayvan, not) {
+  const modal = document.getElementById('atlasModal');
+  const icerik = document.getElementById('atlasModalIcerik');
+  if (!modal || !icerik) return;
+
+  icerik.innerHTML = `
+    <div class="atlasModalUst">
+      <span class="atlasModalGorsel">${gorsel}</span>
+      <div>
+        <h2>${escapeHtml(baslik)}</h2>
+        <span class="ulkeAltbilgi">${escapeHtml(altbilgi)}</span>
+      </div>
+    </div>
+    <div class="ulkeDetay">
+      <div class="ulkeOzellik"><strong>📍 ${escapeHtml(mekan.ad)}</strong><span>${escapeHtml(mekan.bilgi)}</span></div>
+      <div class="ulkeOzellik"><strong>${hayvan.emoji} ${escapeHtml(hayvan.ad)}</strong><span>${escapeHtml(hayvan.bilgi)}</span></div>
+    </div>
+    <div class="ulkeNot">💡 ${escapeHtml(not)}</div>
+  `;
+
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function atlasModalKapat() {
+  const modal = document.getElementById('atlasModal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('click', e => {
+  const detayBtn = e.target.closest('.ulkeDetayBtn');
+  if (detayBtn) {
+    const tip = detayBtn.dataset.tip;
+    const idx = Number(detayBtn.dataset.index);
+    const kaynak = tip === 'sehir' ? TURKIYE_SEHIRLERI : ULKELER;
+    const veri = kaynak[idx];
+    if (!veri) return;
+    const baslik = tip === 'sehir' ? veri.ad : `${veri.bayrak} ${veri.ad}`;
+    const altbilgi = tip === 'sehir' ? veri.bolge : `${veri.baskent} · ${veri.kita}`;
+    atlasDetayAc(baslik, altbilgi, veri.gorsel, veri.mekan, veri.hayvan, veri.bilgiNotu);
+    return;
+  }
+  if (e.target.closest('#atlasModalKapat') || e.target.id === 'atlasModal') {
+    atlasModalKapat();
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') atlasModalKapat();
+});
+
 // Atlas içeriği okuma verisinden bağımsız statik içeriktir — sayfa yüklenince bir kez oluşturulur.
 ulkeleriGoster();
+turkiyeSehirleriniGoster();
 bilimDunyasiniGoster();
+
+// ============================================================
+// ANA SEKMELER (Panom / Kaşifler / Uçuş Günlüğü / Yıldız Kütüphanesi /
+// Kargo Ambarı / Ödüller / Atlas) — sayfayı derli toplu tutmak için
+// tüm bölümler artık sekme sekme açılıyor, hepsi aynı anda alt alta
+// durmuyor. Atlas'ın kendi iç sekmeleri (.atlasSekmeBtn) bundan ayrı
+// ve bağımsız çalışmaya devam ediyor.
+// ============================================================
+function anaSekmesiGoster(sekme) {
+  document.querySelectorAll('.anaSekmeBtn').forEach(b => b.classList.toggle('aktif', b.dataset.anasekme === sekme));
+  document.querySelectorAll('.anaSekmeIcerik').forEach(i => {
+    i.style.display = i.id === `anasekme-${sekme}` ? 'block' : 'none';
+  });
+}
+
+document.querySelectorAll('.anaSekmeBtn').forEach(btn => {
+  btn.addEventListener('click', () => anaSekmesiGoster(btn.dataset.anasekme));
+});

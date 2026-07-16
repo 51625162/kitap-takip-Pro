@@ -47,222 +47,264 @@
       </header>
 
       <main>
-        <section id="kisiKartlari" class="kisiKartGrid"></section>
+        <div class="anaSekmeler">
+          <button class="anaSekmeBtn aktif" data-anasekme="panom" type="button">🚀 Panom</button>
+          <button class="anaSekmeBtn" data-anasekme="kasifler" type="button">🧑‍🚀 Kaşifler</button>
+          <button class="anaSekmeBtn" data-anasekme="ucus-gunlugu" type="button">📋 Uçuş Günlüğü</button>
+          <button class="anaSekmeBtn" data-anasekme="yildiz-kutuphanesi" type="button">📚 Yıldız Kütüphanesi</button>
+          <button class="anaSekmeBtn" data-anasekme="kargo" type="button">📦 Kargo Ambarı</button>
+          <button class="anaSekmeBtn" data-anasekme="oduller" type="button">🎁 Ödüller</button>
+          <button class="anaSekmeBtn" data-anasekme="atlas" type="button">🗺️ Atlas</button>
+        </div>
 
         <!-- ====================== -->
-        <!-- KİŞİ YÖNETİMİ -->
+        <!-- SEKME: PANOM -->
         <!-- ====================== -->
-        <section class="kart">
-          <h2>🧑‍🚀 Kaşif Yönetimi</h2>
-          <div class="satirGrup">
-            <input type="text" id="yeniKisi" placeholder="Kaşifin Adı" />
-            <button id="kisiEkleBtn" class="btn btn-primary">➕ Kaşif Ekle</button>
-          </div>
-          <label class="kucukEtiket">Kayıtlı Kaşifler</label>
-          <select id="kisiListesi" size="4"></select>
-        </section>
+        <div id="anasekme-panom" class="anaSekmeIcerik">
+          <section id="kisiKartlari" class="kisiKartGrid"></section>
 
-        <!-- ====================== -->
-        <!-- YENİ OKUMA KAYDI -->
-        <!-- ====================== -->
-        <section class="kart">
-          <h2>📡 Yeni Uçuş Kaydı</h2>
-
-          <div class="formGrid">
-            <div class="formAlan">
-              <label>Kaşif</label>
-              <select id="kisi"></select>
+          <!-- ====================== -->
+          <!-- İSTATİSTİKLER -->
+          <!-- ====================== -->
+          <section class="kart">
+            <h2>🎛️ Uçuş İstasyonu</h2>
+            <div class="istatistikGrid">
+              <div class="istatistikKart">
+                <h3>📖 Toplam Sayfa</h3>
+                <h2 id="toplamSayfaGenel">0</h2>
+              </div>
+              <div class="istatistikKart">
+                <h3>📚 Toplam Kitap</h3>
+                <h2 id="toplamKitapGenel">0</h2>
+              </div>
+              <div class="istatistikKart">
+                <h3>🏆 En Yüksek Uçuş</h3>
+                <h2 id="lider">-</h2>
+              </div>
             </div>
+          </section>
 
-            <div class="formAlan">
-              <label>Tarih</label>
-              <div class="tarihKutusu">
-                <span>📅</span>
-                <input type="date" id="tarih" />
+          <!-- ====================== -->
+          <!-- GRAFİK -->
+          <!-- ====================== -->
+          <section class="kart">
+            <h2>📡 Sinyal Grafiği</h2>
+            <div style="height: 300px">
+              <canvas id="okumaGrafik"></canvas>
+            </div>
+          </section>
+
+          <!-- ====================== -->
+          <!-- GELİŞİM GRAFİĞİ -->
+          <!-- ====================== -->
+          <section class="kart">
+            <h2>📈 Gelişim Grafiği</h2>
+            <p class="aciklamaMetni">Zaman içinde toplam okunan sayfa — her kaşif için ayrı bir çizgi.</p>
+            <div style="height: 300px; position: relative;">
+              <canvas id="gelisimGrafik"></canvas>
+              <p id="gelisimGrafikBos" class="bosDurum" style="display:none;">📊 Gelişim grafiği için en az iki farklı günde okuma kaydı gerekiyor.</p>
+            </div>
+          </section>
+        </div>
+
+        <!-- ====================== -->
+        <!-- SEKME: KAŞİFLER & KAYIT -->
+        <!-- ====================== -->
+        <div id="anasekme-kasifler" class="anaSekmeIcerik" style="display:none;">
+          <!-- ====================== -->
+          <!-- KİŞİ YÖNETİMİ -->
+          <!-- ====================== -->
+          <section class="kart">
+            <h2>🧑‍🚀 Kaşif Yönetimi</h2>
+            <div class="satirGrup">
+              <input type="text" id="yeniKisi" placeholder="Kaşifin Adı" />
+              <button id="kisiEkleBtn" class="btn btn-primary">➕ Kaşif Ekle</button>
+            </div>
+            <label class="kucukEtiket">Kayıtlı Kaşifler</label>
+            <select id="kisiListesi" size="4"></select>
+          </section>
+
+          <!-- ====================== -->
+          <!-- YENİ OKUMA KAYDI -->
+          <!-- ====================== -->
+          <section class="kart">
+            <h2>📡 Yeni Uçuş Kaydı</h2>
+
+            <div class="formGrid">
+              <div class="formAlan">
+                <label>Kaşif</label>
+                <select id="kisi"></select>
+              </div>
+
+              <div class="formAlan">
+                <label>Tarih</label>
+                <div class="tarihKutusu">
+                  <span>📅</span>
+                  <input type="date" id="tarih" />
+                </div>
+              </div>
+
+              <div class="formAlan">
+                <label>Kitap Adı</label>
+                <input type="text" id="kitapAdi" placeholder="Örn. Küçük Prens" />
+              </div>
+
+              <div class="formAlan">
+                <label>Yazar</label>
+                <input type="text" id="yazar" placeholder="Örn. Antoine de Saint-Exupéry" />
+              </div>
+
+              <div class="formAlan">
+                <label>Kitabın Toplam Sayfası</label>
+                <input type="number" id="toplamSayfa" min="0" placeholder="Örn. 120" />
+              </div>
+
+              <div class="formAlan">
+                <label>Bugün Okunan Sayfa</label>
+                <input type="number" id="okunanSayfa" min="0" placeholder="Örn. 20" />
+              </div>
+
+              <div class="formAlan formAlanGenis">
+                <label>📎 Dosya Ekle (isteğe bağlı — PDF veya Excel)</label>
+                <input type="file" id="kayitDosya" accept=".pdf,.xlsx,.xls" />
               </div>
             </div>
 
-            <div class="formAlan">
-              <label>Kitap Adı</label>
-              <input type="text" id="kitapAdi" placeholder="Örn. Küçük Prens" />
+            <div class="butonGrup">
+              <button id="kaydetBtn" class="btn btn-primary">💾 Kaydı Ekle</button>
+              <button id="iptalBtn" class="btn btn-ghost" style="display:none;">✖ İptal</button>
             </div>
 
-            <div class="formAlan">
-              <label>Yazar</label>
-              <input type="text" id="yazar" placeholder="Örn. Antoine de Saint-Exupéry" />
+            <div class="excelGrup">
+              <button id="excelAktarBtn" class="btn btn-success">📥 Excel'e Aktar</button>
+
+              <input type="file" id="excelDosya" accept=".xlsx,.xls" style="display:none" />
+              <button id="excelYukleBtn" class="btn btn-secondary" onclick="document.getElementById('excelDosya').click()">
+                📤 Excel'den Yükle
+              </button>
+            </div>
+          </section>
+
+          <!-- ====================== -->
+          <!-- DEVAM EDEN KİTAPLAR -->
+          <!-- ====================== -->
+          <section class="kart">
+            <h2>🛰️ Devam Eden Görevler</h2>
+            <div id="devamEdenKitaplar" class="devamListesi"></div>
+          </section>
+        </div>
+
+        <!-- ====================== -->
+        <!-- SEKME: UÇUŞ GÜNLÜĞÜ -->
+        <!-- ====================== -->
+        <div id="anasekme-ucus-gunlugu" class="anaSekmeIcerik" style="display:none;">
+          <section class="kart">
+            <h2>📋 Uçuş Günlüğü</h2>
+            <div class="tabloKapsayici tabloSinirli">
+              <table id="kayitTablosu">
+                <thead>
+                  <tr>
+                    <th>Tarih</th>
+                    <th>Kaşif</th>
+                    <th>Kitap</th>
+                    <th>Yazar</th>
+                    <th>Sayfa</th>
+                    <th>Dosya</th>
+                    <th>İşlem</th>
+                  </tr>
+                </thead>
+                <tbody id="kayitlarBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <!-- ====================== -->
+        <!-- SEKME: YILDIZ KÜTÜPHANESİ -->
+        <!-- ====================== -->
+        <div id="anasekme-yildiz-kutuphanesi" class="anaSekmeIcerik" style="display:none;">
+          <section class="kart">
+            <h2>📚 Yıldız Kütüphanesi</h2>
+            <div class="tabloKapsayici tabloSinirli">
+              <table id="arsivTablosu">
+                <thead>
+                  <tr>
+                    <th>Kitap</th>
+                    <th>Yazar</th>
+                    <th>Kaşif</th>
+                    <th>Sayfa</th>
+                    <th>Durum</th>
+                  </tr>
+                </thead>
+                <tbody id="arsivBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <!-- ====================== -->
+        <!-- SEKME: KARGO AMBARI -->
+        <!-- ====================== -->
+        <div id="anasekme-kargo" class="anaSekmeIcerik" style="display:none;">
+          <section class="kart">
+            <h2>📦 Kargo Ambarı</h2>
+            <p class="aciklamaMetni">PDF veya Excel dosyalarını kargo ambarına ekle, istediğin zaman indir. Dosyalar sadece bu tarayıcıda saklanır (maks. 4MB).</p>
+            <div class="satirGrup">
+              <input type="file" id="dosyaArsivInput" accept=".pdf,.xlsx,.xls" />
+            </div>
+            <div id="dosyaArsiviListesi" class="dosyaListesi"></div>
+          </section>
+        </div>
+
+        <!-- ====================== -->
+        <!-- SEKME: ÖDÜLLER REHBERİ -->
+        <!-- ====================== -->
+        <div id="anasekme-oduller" class="anaSekmeIcerik" style="display:none;">
+          <section class="kart">
+            <h2>🎁 Ödüller Rehberi</h2>
+            <p class="aciklamaMetni">Okudukça açılan tüm ödüller ve nasıl kazanılacakları burada!</p>
+            <div id="odullerRehberi"></div>
+          </section>
+        </div>
+
+        <!-- ====================== -->
+        <!-- SEKME: ÇOCUK DÜNYA ATLASI -->
+        <!-- ====================== -->
+        <div id="anasekme-atlas" class="anaSekmeIcerik" style="display:none;">
+          <section class="kart atlasBolumu">
+            <h2>🗺️ Çocuk Dünya Atlası</h2>
+            <p class="aciklamaMetni">Dünyayı keşfet! Ülkeler, uzay, yer altı ve deniz altı hakkında eğlenceli bilgiler. Bir karta dokun, sayfası açılsın!</p>
+
+            <div class="atlasSekmeler">
+              <button class="atlasSekmeBtn aktif" data-sekme="ulkeler" type="button">🌍 Ülkeler</button>
+              <button class="atlasSekmeBtn" data-sekme="turkiye" type="button">🇹🇷 Türkiye</button>
+              <button class="atlasSekmeBtn" data-sekme="uzay" type="button">🚀 Uzay</button>
+              <button class="atlasSekmeBtn" data-sekme="yeralti" type="button">⛏️ Yeraltı Dünyası</button>
+              <button class="atlasSekmeBtn" data-sekme="denizalti" type="button">🌊 Deniz Altı</button>
             </div>
 
-            <div class="formAlan">
-              <label>Kitabın Toplam Sayfası</label>
-              <input type="number" id="toplamSayfa" min="0" placeholder="Örn. 120" />
-            </div>
-
-            <div class="formAlan">
-              <label>Bugün Okunan Sayfa</label>
-              <input type="number" id="okunanSayfa" min="0" placeholder="Örn. 20" />
-            </div>
-
-            <div class="formAlan formAlanGenis">
-              <label>📎 Dosya Ekle (isteğe bağlı — PDF veya Excel)</label>
-              <input type="file" id="kayitDosya" accept=".pdf,.xlsx,.xls" />
-            </div>
-          </div>
-
-          <div class="butonGrup">
-            <button id="kaydetBtn" class="btn btn-primary">💾 Kaydı Ekle</button>
-            <button id="iptalBtn" class="btn btn-ghost" style="display:none;">✖ İptal</button>
-          </div>
-
-          <div class="excelGrup">
-            <button id="excelAktarBtn" class="btn btn-success">📥 Excel'e Aktar</button>
-
-            <input type="file" id="excelDosya" accept=".xlsx,.xls" style="display:none" />
-            <button id="excelYukleBtn" class="btn btn-secondary" onclick="document.getElementById('excelDosya').click()">
-              📤 Excel'den Yükle
-            </button>
-          </div>
-        </section>
-
-        <!-- ====================== -->
-        <!-- DEVAM EDEN KİTAPLAR -->
-        <!-- ====================== -->
-        <section class="kart">
-          <h2>🛰️ Devam Eden Görevler</h2>
-          <div id="devamEdenKitaplar" class="devamListesi"></div>
-        </section>
-
-        <!-- ====================== -->
-        <!-- GÜNLÜK KAYITLAR -->
-        <!-- ====================== -->
-        <section class="kart">
-          <h2>📋 Uçuş Günlüğü</h2>
-          <div class="tabloKapsayici">
-            <table id="kayitTablosu">
-              <thead>
-                <tr>
-                  <th>Tarih</th>
-                  <th>Kaşif</th>
-                  <th>Kitap</th>
-                  <th>Yazar</th>
-                  <th>Sayfa</th>
-                  <th>Dosya</th>
-                  <th>İşlem</th>
-                </tr>
-              </thead>
-              <tbody id="kayitlarBody"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- ====================== -->
-        <!-- KİTAP ARŞİVİ -->
-        <!-- ====================== -->
-        <section class="kart">
-          <h2>📚 Yıldız Kütüphanesi</h2>
-          <div class="tabloKapsayici">
-            <table id="arsivTablosu">
-              <thead>
-                <tr>
-                  <th>Kitap</th>
-                  <th>Yazar</th>
-                  <th>Kaşif</th>
-                  <th>Sayfa</th>
-                  <th>Durum</th>
-                </tr>
-              </thead>
-              <tbody id="arsivBody"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- ====================== -->
-        <!-- DOSYA ARŞİVİ -->
-        <!-- ====================== -->
-        <section class="kart">
-          <h2>📦 Kargo Ambarı</h2>
-          <p class="aciklamaMetni">PDF veya Excel dosyalarını kargo ambarına ekle, istediğin zaman indir. Dosyalar sadece bu tarayıcıda saklanır (maks. 4MB).</p>
-          <div class="satirGrup">
-            <input type="file" id="dosyaArsivInput" accept=".pdf,.xlsx,.xls" />
-          </div>
-          <div id="dosyaArsiviListesi" class="dosyaListesi"></div>
-        </section>
-
-        <!-- ====================== -->
-        <!-- İSTATİSTİKLER -->
-        <!-- ====================== -->
-        <section class="kart">
-          <h2>🎛️ Uçuş İstasyonu</h2>
-          <div class="istatistikGrid">
-            <div class="istatistikKart">
-              <h3>📖 Toplam Sayfa</h3>
-              <h2 id="toplamSayfaGenel">0</h2>
-            </div>
-            <div class="istatistikKart">
-              <h3>📚 Toplam Kitap</h3>
-              <h2 id="toplamKitapGenel">0</h2>
-            </div>
-            <div class="istatistikKart">
-              <h3>🏆 En Yüksek Uçuş</h3>
-              <h2 id="lider">-</h2>
-            </div>
-          </div>
-        </section>
-
-        <!-- ====================== -->
-        <!-- GRAFİK -->
-        <!-- ====================== -->
-        <section class="kart">
-          <h2>📡 Sinyal Grafiği</h2>
-          <div style="height: 300px">
-            <canvas id="okumaGrafik"></canvas>
-          </div>
-        </section>
-
-        <!-- ====================== -->
-        <!-- GELİŞİM GRAFİĞİ -->
-        <!-- ====================== -->
-        <section class="kart">
-          <h2>📈 Gelişim Grafiği</h2>
-          <p class="aciklamaMetni">Zaman içinde toplam okunan sayfa — her kaşif için ayrı bir çizgi.</p>
-          <div style="height: 300px; position: relative;">
-            <canvas id="gelisimGrafik"></canvas>
-            <p id="gelisimGrafikBos" class="bosDurum" style="display:none;">📊 Gelişim grafiği için en az iki farklı günde okuma kaydı gerekiyor.</p>
-          </div>
-        </section>
-
-        <!-- ====================== -->
-        <!-- ÖDÜLLER REHBERİ -->
-        <!-- ====================== -->
-        <section class="kart">
-          <h2>🎁 Ödüller Rehberi</h2>
-          <p class="aciklamaMetni">Okudukça açılan tüm ödüller ve nasıl kazanılacakları burada!</p>
-          <div id="odullerRehberi"></div>
-        </section>
-
-        <!-- ====================== -->
-        <!-- ÇOCUK DÜNYA ATLASI -->
-        <!-- ====================== -->
-        <section class="kart">
-          <h2>🗺️ Çocuk Dünya Atlası</h2>
-          <p class="aciklamaMetni">Dünyayı keşfet! Ülkeler, uzay, yer altı ve deniz altı hakkında eğlenceli bilgiler.</p>
-
-          <div class="atlasSekmeler">
-            <button class="atlasSekmeBtn aktif" data-sekme="ulkeler" type="button">🌍 Ülkeler</button>
-            <button class="atlasSekmeBtn" data-sekme="uzay" type="button">🚀 Uzay</button>
-            <button class="atlasSekmeBtn" data-sekme="yeralti" type="button">⛏️ Yeraltı Dünyası</button>
-            <button class="atlasSekmeBtn" data-sekme="denizalti" type="button">🌊 Deniz Altı</button>
-          </div>
-
-          <div id="atlas-ulkeler" class="atlasIcerik ulkeGrid"></div>
-          <div id="atlas-uzay" class="atlasIcerik" style="display:none;"></div>
-          <div id="atlas-yeralti" class="atlasIcerik" style="display:none;"></div>
-          <div id="atlas-denizalti" class="atlasIcerik" style="display:none;"></div>
-        </section>
+            <div id="atlas-ulkeler" class="atlasIcerik ulkeGrid"></div>
+            <div id="atlas-turkiye" class="atlasIcerik ulkeGrid" style="display:none;"></div>
+            <div id="atlas-uzay" class="atlasIcerik" style="display:none;"></div>
+            <div id="atlas-yeralti" class="atlasIcerik" style="display:none;"></div>
+            <div id="atlas-denizalti" class="atlasIcerik" style="display:none;"></div>
+          </section>
+        </div>
 
         <footer>
           <p>© 2026 Okuma Roketi — Her sayfa seni yıldızlara biraz daha yaklaştırır 🌌</p>
         </footer>
       </main>
+    </div>
+
+    <!-- ====================== -->
+    <!-- ATLAS DETAY PENCERESİ (kart tıklanınca "sayfa gibi" açılır) -->
+    <!-- ====================== -->
+    <div id="atlasModal" class="atlasModal" style="display:none;">
+      <div class="atlasModalKutu">
+        <button id="atlasModalKapat" type="button" class="atlasModalKapatBtn" title="Kapat">✕</button>
+        <div id="atlasModalIcerik"></div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
