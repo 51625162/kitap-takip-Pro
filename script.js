@@ -549,7 +549,7 @@ function kisiKartlariniOlustur() {
 
       hayvanHtml = `
         <div class="hayvanKart ${efsaneMi ? 'efsanevi' : ''}">
-          <div class="hayvanEmoji hayvanAsama${asama}">${mevcut.emoji}</div>
+          <div class="hayvanEmoji hayvanAsama${asama} tiklanabilir" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}" title="Dokun, dostunla oyna!">${mevcut.emoji}</div>
           <div class="hayvanAd">${escapeHtml(mevcut.ad)}</div>
           <button class="hayvanSesBtn" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}">🔊 Sesini Dinle</button>
           ${sonrakiEsik !== undefined
@@ -603,10 +603,26 @@ if (kisiKartlariAlani) {
     const hayvanBtn = e.target.closest('.hayvanSecBtn');
     const sesBtn = e.target.closest('.hayvanSesBtn');
     const onizlemeBtn = e.target.closest('.hayvanOnizlemeBtn');
+    const hayvanEmoji = e.target.closest('.hayvanEmoji');
+
     if (silBtn) kisiSil(silBtn.dataset.isim);
     if (hayvanBtn) evcilHayvanSec(hayvanBtn.dataset.isim, hayvanBtn.dataset.tur);
     if (sesBtn) hayvanSesiCal(sesBtn.dataset.tur, sesBtn.dataset.asama);
     if (onizlemeBtn) hayvanSesiCal(onizlemeBtn.dataset.tur, onizlemeBtn.dataset.asama);
+
+    if (hayvanEmoji) {
+      hayvanSesiCal(hayvanEmoji.dataset.tur, hayvanEmoji.dataset.asama);
+      hayvanEmoji.classList.remove('sevinc');
+      // Yeniden başlatmak için bir sonraki karede tekrar ekle (aynı animasyon üst üste tetiklenebilsin diye)
+      void hayvanEmoji.offsetWidth;
+      hayvanEmoji.classList.add('sevinc');
+      hayvanEmoji.addEventListener('animationend', function temizle(ev) {
+        if (ev.animationName === 'hayvanSevinc') {
+          hayvanEmoji.classList.remove('sevinc');
+          hayvanEmoji.removeEventListener('animationend', temizle);
+        }
+      });
+    }
   });
 }
 
@@ -696,11 +712,48 @@ function formuTemizle() {
   bugununTarihiniAyarla();
 }
 
+let sonSilinenKayit = null;
+let geriAlZamanlayici = null;
+
 function sil(i) {
-  if (!confirm('Bu kayıt silinsin mi?')) return;
+  if (!confirm('Bu kayıt silinsin mi? (Silindikten sonra birkaç saniye içinde "Geri Al" ile geri getirebilirsin)')) return;
+  sonSilinenKayit = { kayit: kayitlar[i], index: i };
   kayitlar.splice(i, 1);
   kaydetVeri();
   tumunuGuncelle();
+  geriAlToastGoster();
+}
+
+function geriAl() {
+  if (!sonSilinenKayit) return;
+  kayitlar.splice(sonSilinenKayit.index, 0, sonSilinenKayit.kayit);
+  kaydetVeri();
+  tumunuGuncelle();
+  sonSilinenKayit = null;
+  clearTimeout(geriAlZamanlayici);
+  const toast = document.getElementById('geriAlToast');
+  if (toast) toast.classList.remove('gorunur');
+}
+
+function geriAlToastGoster() {
+  clearTimeout(geriAlZamanlayici);
+  let toast = document.getElementById('geriAlToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'geriAlToast';
+    toast.className = 'geriAlToast';
+    toast.innerHTML = `<span>🗑️ Kayıt silindi.</span><button id="geriAlBtn" type="button">↩️ Geri Al</button>`;
+    document.body.appendChild(toast);
+    document.getElementById('geriAlBtn').addEventListener('click', geriAl);
+  }
+  // Yeniden tetiklenebilmesi için önce gizleyip bir sonraki karede tekrar gösteriyoruz.
+  toast.classList.remove('gorunur');
+  void toast.offsetWidth;
+  toast.classList.add('gorunur');
+  geriAlZamanlayici = setTimeout(() => {
+    toast.classList.remove('gorunur');
+    sonSilinenKayit = null;
+  }, 6000);
 }
 
 function duzenle(i) {
@@ -1205,3 +1258,179 @@ function tumunuGuncelle() {
   dosyaArsiviniGoster();
   odullerRehberiniGoster();
 }
+
+// ============================================================
+// ÇOCUK DÜNYA ATLASI
+// Statik, eğitici içerik — okuma takibinden bağımsız ayrı bir bölüm.
+// Görseller telif/ağ bağımlılığı olmaması için büyük emoji ile temsil
+// edilir (offline çalışma prensibiyle uyumlu).
+// Yeni ülke/bilgi eklemek için sadece aşağıdaki dizilere yeni bir
+// nesne eklemek yeterlidir — arayüz otomatik güncellenir.
+// ============================================================
+const ULKELER = [
+  {
+    bayrak: '🇹🇷', ad: 'Türkiye', baskent: 'Ankara', kita: 'Asya / Avrupa', gorsel: '🎈',
+    mekan: { ad: 'Kapadokya', bilgi: 'Peribacaları denen ilginç kaya oluşumlarıyla ünlüdür, sıcak hava balonlarıyla gökyüzünden izlenir.' },
+    hayvan: { emoji: '🐈', ad: 'Van Kedisi', bilgi: 'Genelde bir gözü mavi bir gözü sarı/yeşil olur ve suda yüzmeyi seven nadir kedilerdendir.' },
+    bilgiNotu: 'Türkiye, Asya ile Avrupa\'yı birbirine bağlayan İstanbul Boğazı\'na sahip tek ülkedir!',
+  },
+  {
+    bayrak: '🇫🇷', ad: 'Fransa', baskent: 'Paris', kita: 'Avrupa', gorsel: '🗼',
+    mekan: { ad: 'Eyfel Kulesi', bilgi: 'Yaklaşık 330 metre yüksekliğindedir ve sıcak havada demir genleştiği için birkaç santim uzayabilir.' },
+    hayvan: { emoji: '🐓', ad: 'Galya Horozu', bilgi: 'Fransa\'nın milli sembolüdür, gururlu duruşuyla bilinir.' },
+    bilgiNotu: 'Fransa\'da 1000\'den fazla çeşit peynir üretilir!',
+  },
+  {
+    bayrak: '🇪🇬', ad: 'Mısır', baskent: 'Kahire', kita: 'Afrika', gorsel: '🔺',
+    mekan: { ad: 'Giza Piramitleri', bilgi: 'Binlerce yıl önce, hiç modern makine yokken dev taş bloklarla inşa edilmiştir.' },
+    hayvan: { emoji: '🐫', ad: 'Deve', bilgi: 'Hörgücünde yağ depolar ve susuz günlerce çölde yolculuk edebilir.' },
+    bilgiNotu: 'Nil Nehri, dünyanın en uzun nehirlerinden biridir ve Mısır\'ın can damarıdır.',
+  },
+  {
+    bayrak: '🇨🇳', ad: 'Çin', baskent: 'Pekin', kita: 'Asya', gorsel: '🧱',
+    mekan: { ad: 'Çin Seddi', bilgi: 'Uzunluğu binlerce kilometredir; bazı bölümleri uzaydan bile fark edilebilir denir (aslında çok da net görülmez, ama efsanesi böyledir!).' },
+    hayvan: { emoji: '🐼', ad: 'Dev Panda', bilgi: 'Günde neredeyse 12 saat bambu yiyerek geçirir.' },
+    bilgiNotu: 'Çin\'de kağıt, pusula ve barut gibi birçok önemli buluş binlerce yıl önce yapılmıştır.',
+  },
+  {
+    bayrak: '🇯🇵', ad: 'Japonya', baskent: 'Tokyo', kita: 'Asya', gorsel: '🗻',
+    mekan: { ad: 'Fuji Dağı', bilgi: 'Japonya\'nın en yüksek dağıdır ve kar kaplı zirvesiyle sanat eserlerine ilham vermiştir.' },
+    hayvan: { emoji: '🐒', ad: 'Kar Maymunu', bilgi: 'Kışın kar altında sıcak kaplıcalara girerek ısınır.' },
+    bilgiNotu: 'Japonya\'da ilkbaharda kiraz çiçeklerini (sakura) izlemek için özel şenlikler düzenlenir.',
+  },
+  {
+    bayrak: '🇦🇺', ad: 'Avustralya', baskent: 'Canberra', kita: 'Okyanusya', gorsel: '🪨',
+    mekan: { ad: 'Ayers Rock (Uluru)', bilgi: 'Dünyanın en büyük tek kaya parçalarından biridir ve gün batımında rengi kızıla döner.' },
+    hayvan: { emoji: '🦘', ad: 'Kanguru', bilgi: 'Yavrularını karnındaki kesede taşır ve saatte 70 km hıza kadar zıplayabilir.' },
+    bilgiNotu: 'Avustralya, hem bir ülke hem de bir kıtadır!',
+  },
+  {
+    bayrak: '🇰🇪', ad: 'Kenya', baskent: 'Nairobi', kita: 'Afrika', gorsel: '🌅',
+    mekan: { ad: 'Masai Mara', bilgi: 'Her yıl milyonlarca gnu ve zebranın yer değiştirdiği büyük göç bu bölgede yaşanır.' },
+    hayvan: { emoji: '🦁', ad: 'Aslan', bilgi: 'Sürü halinde (aslan sürüsüne "gurur" denir) yaşayan tek büyük kedi türüdür.' },
+    bilgiNotu: 'Kenya\'da dünyanın en hızlı kara hayvanı olan çita da yaşar.',
+  },
+  {
+    bayrak: '🇧🇷', ad: 'Brezilya', baskent: 'Brasília', kita: 'Güney Amerika', gorsel: '🌳',
+    mekan: { ad: 'Amazon Ormanları', bilgi: 'Dünyanın oksijeninin büyük bir kısmını üretir, bu yüzden "Dünya\'nın Akciğerleri" olarak anılır.' },
+    hayvan: { emoji: '🦜', ad: 'Toukan (Tukan Kuşu)', bilgi: 'Rengarenk ve kocaman gagasıyla tanınır, bu gaga aslında çok hafiftir.' },
+    bilgiNotu: 'Amazon Nehri\'nde piranha ve pembe yunuslar gibi ilginç canlılar yaşar.',
+  },
+  {
+    bayrak: '🇺🇸', ad: 'Amerika Birleşik Devletleri', baskent: 'Washington D.C.', kita: 'Kuzey Amerika', gorsel: '🗽',
+    mekan: { ad: 'Büyük Kanyon', bilgi: 'Colorado Nehri\'nin milyonlarca yılda oyduğu devasa bir vadidir, bazı yerlerde 1,8 km derinliğindedir.' },
+    hayvan: { emoji: '🦅', ad: 'Kel Kartal', bilgi: 'ABD\'nin milli sembolüdür ve gözleri insan gözünden çok daha keskindir.' },
+    bilgiNotu: 'Özgürlük Heykeli, Fransa tarafından ABD\'ye hediye edilmiştir.',
+  },
+  {
+    bayrak: '🇮🇹', ad: 'İtalya', baskent: 'Roma', kita: 'Avrupa', gorsel: '🏛️',
+    mekan: { ad: 'Kolezyum', bilgi: 'Antik Roma\'da binlerce kişinin gösterileri izlediği dev bir arenadır.' },
+    hayvan: { emoji: '🐺', ad: 'Kurt', bilgi: 'Efsaneye göre Roma şehrinin kurucuları bir dişi kurt tarafından büyütülmüştür.' },
+    bilgiNotu: 'Pizza ve makarna dünyaya İtalya\'dan yayılmıştır.',
+  },
+  {
+    bayrak: '🇮🇳', ad: 'Hindistan', baskent: 'Yeni Delhi', kita: 'Asya', gorsel: '🕌',
+    mekan: { ad: 'Tac Mahal', bilgi: 'Bir hükümdarın eşinin anısına inşa ettirdiği, beyaz mermerden yapılmış muhteşem bir anıt mezardır.' },
+    hayvan: { emoji: '🐅', ad: 'Bengal Kaplanı', bilgi: 'Her kaplanın çizgileri parmak izi gibi kendine özgüdür, hiçbiri birbirinin aynısı değildir.' },
+    bilgiNotu: 'Satranç oyunu ilk olarak Hindistan\'da ortaya çıkmıştır.',
+  },
+  {
+    bayrak: '🐧', ad: 'Antarktika', baskent: 'Sabit yerleşim yok', kita: 'Antarktika (kıta)', gorsel: '🧊',
+    mekan: { ad: 'Buzul Kıtası', bilgi: 'Dünyanın en soğuk, en rüzgarlı ve en kurak kıtasıdır; buzu bazı yerlerde 4 km kalınlığa ulaşır.' },
+    hayvan: { emoji: '🐧', ad: 'İmparator Penguen', bilgi: 'Uçamaz ama harika yüzücüdür ve yumurtasını babası ayaklarının üzerinde aylarca ısıtır.' },
+    bilgiNotu: 'Antarktika\'da hiç sürekli yaşayan insan nüfusu yoktur, sadece bilim insanları geçici olarak kalır.',
+  },
+];
+
+const BILIM_DUNYASI = {
+  uzay: {
+    aciklama: 'Gökyüzünün ötesinde neler var, hep merak edilir. İşte uzay hakkında bilmen gereken bazı harika bilgiler!',
+    kartlar: [
+      { gorsel: '☀️', baslik: 'Güneş', bilgi: 'Güneş aslında dev bir yıldızdır! İçine 1 milyondan fazla Dünya sığabilir.' },
+      { gorsel: '🌕', baslik: 'Ay', bilgi: 'Ay, Dünya\'nın etrafında yaklaşık 27 günde bir tur atar ve kendi ışığı yoktur, Güneş ışığını yansıtır.' },
+      { gorsel: '🪐', baslik: 'Satürn', bilgi: 'Satürn\'ün etrafındaki halkalar aslında milyonlarca buz ve kaya parçasından oluşur.' },
+      { gorsel: '🕳️', baslik: 'Kara Delik', bilgi: 'Kara delikler o kadar güçlü bir yer çekimine sahiptir ki ışık bile içinden kaçamaz!' },
+      { gorsel: '👨‍🚀', baslik: 'Astronotlar', bilgi: 'Uzayda yer çekimi çok az olduğu için astronotlar havada süzülür, boyları bile birkaç santim uzayabilir.' },
+      { gorsel: '⭐', baslik: 'Yıldızlar', bilgi: 'Gökyüzünde gördüğün birçok yıldız, Güneş\'ten çok daha büyük olabilir; sadece çok uzakta oldukları için küçük görünürler.' },
+    ],
+  },
+  yeralti: {
+    aciklama: 'Ayaklarımızın altında gizli bir dünya var! İşte yer altında neler olduğuna dair ilginç bilgiler.',
+    kartlar: [
+      { gorsel: '🕳️', baslik: 'Mağaralar', bilgi: 'Bazı mağaralar o kadar büyüktür ki içlerinde koca bir orman veya göl bile olabilir.' },
+      { gorsel: '🌋', baslik: 'Volkanlar', bilgi: 'Yer altındaki erimiş kayalara magma denir; yeryüzüne çıktığında ona lav adı verilir.' },
+      { gorsel: '🦴', baslik: 'Fosiller', bilgi: 'Fosiller, milyonlarca yıl önce yaşamış canlıların taşlaşmış izleridir ve bize dinozorlar hakkında bilgi verir.' },
+      { gorsel: '🐛', baslik: 'Solucanlar', bilgi: 'Solucanlar toprağı kazarak havalandırır, bu da bitkilerin daha iyi büyümesine yardımcı olur.' },
+      { gorsel: '💎', baslik: 'Değerli Taşlar', bilgi: 'Elmaslar, yer kabuğunun derinliklerinde yüksek basınç ve sıcaklık altında milyonlarca yılda oluşur.' },
+      { gorsel: '🌍', baslik: 'Yer Katmanları', bilgi: 'Dünya\'nın en içindeki çekirdek katmanı, Güneş\'in yüzeyi kadar sıcak olabilir!' },
+    ],
+  },
+  denizalti: {
+    aciklama: 'Okyanusların derinliklerinde keşfedilmeyi bekleyen büyüleyici bir dünya var!',
+    kartlar: [
+      { gorsel: '🐋', baslik: 'Mavi Balina', bilgi: 'Mavi balina, gezegendeki en büyük canlıdır — dili bile bir filin ağırlığında olabilir!' },
+      { gorsel: '🦑', baslik: 'Dev Kalamar', bilgi: 'Dev kalamarlar bir otobüs kadar uzun olabilir ve okyanusun karanlık derinliklerinde yaşarlar.' },
+      { gorsel: '🐠', baslik: 'Mercan Resifleri', bilgi: 'Mercan resifleri aslında canlı organizmalardır ve binlerce deniz canlısına ev sahipliği yapar.' },
+      { gorsel: '💡', baslik: 'Işıldayan Canlılar', bilgi: 'Bazı derin deniz canlıları kendi ışıklarını üretebilir; buna biyolüminesans denir.' },
+      { gorsel: '🏔️', baslik: 'Mariana Çukuru', bilgi: 'Okyanusun en derin noktasıdır — Everest Dağı oraya konsa bile zirvesi su yüzeyine ulaşamazdı.' },
+      { gorsel: '🐢', baslik: 'Deniz Kaplumbağaları', bilgi: 'Deniz kaplumbağaları yumurtlamak için doğdukları sahile geri döner; bu yolculuk binlerce kilometre olabilir.' },
+    ],
+  },
+};
+
+function ulkeleriGoster() {
+  const alan = document.getElementById('atlas-ulkeler');
+  if (!alan) return;
+
+  alan.innerHTML = ULKELER.map(u => `
+    <div class="ulkeKart">
+      <div class="ulkeUst">
+        <span class="ulkeGorsel">${u.gorsel}</span>
+        <div>
+          <h3>${u.bayrak} ${escapeHtml(u.ad)}</h3>
+          <span class="ulkeAltbilgi">${escapeHtml(u.baskent)} · ${escapeHtml(u.kita)}</span>
+        </div>
+      </div>
+      <div class="ulkeDetay">
+        <div class="ulkeOzellik"><strong>📍 ${escapeHtml(u.mekan.ad)}</strong><span>${escapeHtml(u.mekan.bilgi)}</span></div>
+        <div class="ulkeOzellik"><strong>${u.hayvan.emoji} ${escapeHtml(u.hayvan.ad)}</strong><span>${escapeHtml(u.hayvan.bilgi)}</span></div>
+      </div>
+      <div class="ulkeNot">💡 ${escapeHtml(u.bilgiNotu)}</div>
+    </div>
+  `).join('');
+}
+
+function bilimDunyasiniGoster() {
+  Object.entries(BILIM_DUNYASI).forEach(([anahtar, bolum]) => {
+    const alan = document.getElementById(`atlas-${anahtar}`);
+    if (!alan) return;
+
+    alan.innerHTML = `
+      <p class="aciklamaMetni">${escapeHtml(bolum.aciklama)}</p>
+      <div class="bilimGrid">
+        ${bolum.kartlar.map(k => `
+          <div class="bilimKart">
+            <div class="bilimGorsel">${k.gorsel}</div>
+            <h4>${escapeHtml(k.baslik)}</h4>
+            <p>${escapeHtml(k.bilgi)}</p>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  });
+}
+
+function atlasSekmesiGoster(sekme) {
+  document.querySelectorAll('.atlasSekmeBtn').forEach(b => b.classList.toggle('aktif', b.dataset.sekme === sekme));
+  document.querySelectorAll('.atlasIcerik').forEach(i => {
+    i.style.display = i.id === `atlas-${sekme}` ? 'block' : 'none';
+  });
+}
+
+document.querySelectorAll('.atlasSekmeBtn').forEach(btn => {
+  btn.addEventListener('click', () => atlasSekmesiGoster(btn.dataset.sekme));
+});
+
+// Atlas içeriği okuma verisinden bağımsız statik içeriktir — sayfa yüklenince bir kez oluşturulur.
+ulkeleriGoster();
+bilimDunyasiniGoster();
