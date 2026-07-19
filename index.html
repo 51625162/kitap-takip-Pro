@@ -1,330 +1,166 @@
 <!DOCTYPE html>
 <html lang="tr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Okuma Roketi — Kitap Takip</title>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zeka Ustası — Dedektif Akademisi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Quicksand:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<div class="floaty" style="top:8%;left:6%;">🔍</div>
+<div class="floaty" style="top:70%;left:88%;animation-delay:2s;">🧩</div>
+<div class="floaty" style="top:40%;left:92%;animation-delay:4s;">💡</div>
+<div class="floaty" style="top:85%;left:10%;animation-delay:1s;">🔑</div>
 
-    <link rel="stylesheet" href="styles.css" />
+<!-- LOGIN -->
+<section id="screen-login" class="screen active">
+  <div class="login-card">
+    <div class="badge-emblem">🕵️</div>
+    <h1>Zeka Ustası</h1>
+    <p class="sub">Dedektif Akademisi'ne Hoş Geldin!</p>
+    <form id="login-form" autocomplete="off">
+      <div class="field">
+        <label for="input-user">Ajan Adı</label>
+        <input id="input-user" type="text" placeholder="Ajan adını yaz" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="input-pass">Gizli Kod</label>
+        <input id="input-pass" type="password" placeholder="•••••" autocomplete="off">
+      </div>
+      <button type="submit" class="login-btn">🕵️ Ajanlığa Başla</button>
+      <div id="login-error" class="login-error"></div>
+    </form>
+  </div>
+</section>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  </head>
+<!-- DASHBOARD -->
+<section id="screen-dashboard" class="screen">
+  <div class="wrap">
+    <div class="topbar">
+      <div class="logo">🔎 Zeka <b>Ustası</b></div>
+      <button class="icon-btn" id="btn-sound">🔊 Ses Açık</button>
+      <button class="icon-btn" id="btn-voice">🎙️ Anlatıcı Sesi</button>
+      <button class="icon-btn" id="btn-videos">🎥 Video Anlatım</button>
+    </div>
 
-  <body>
-    <!-- ====================== -->
-    <!-- GİRİŞ EKRANI -->
-    <!-- ====================== -->
-    <div id="girisEkrani">
-      <div class="girisKutu">
-        <div class="girisIkon">🚀</div>
-        <h2>Okuma Roketi</h2>
-        <p class="girisAltyazi">Uzay yolculuğuna hoş geldin, kaşif!</p>
-        <input type="text" id="kullaniciAdi" placeholder="Kullanıcı Adı" autocomplete="username" />
-        <input type="password" id="sifre" placeholder="Şifre" autocomplete="current-password" />
-        <button id="girisBtn">Fırlat! 🚀</button>
-        <p id="hata"></p>
+    <div class="agent-card">
+      <div class="agent-avatar">🕵️</div>
+      <div class="agent-info">
+        <div class="name">Ajan TALHA</div>
+        <div class="level" id="agent-level">Çaylak Dedektif</div>
+        <div class="progress-bar"><div class="progress-bar-fill" id="level-progress" style="width:0%"></div></div>
+      </div>
+      <div class="agent-points">
+        <div class="num" id="agent-points">0</div>
+        <div class="lbl">TOPLAM PUAN</div>
       </div>
     </div>
 
-    <!-- ====================== -->
-    <!-- UYGULAMA -->
-    <!-- ====================== -->
-    <div id="uygulama">
-      <header>
-        <div class="baslikSatiri">
-          <h1>🚀 Okuma Roketi</h1>
-          <div class="ustButonlar">
-            <span id="aktifKullaniciEtiketi" class="aktifKullaniciEtiketi"></span>
-            <button id="temaBtn" class="btn btn-ghost">🌙 Karanlık Mod</button>
-            <button id="pdfBtn" class="btn btn-ghost">📄 PDF Raporu</button>
-            <button id="cikisBtn" class="btn btn-ghost">🚪 Çıkış Yap</button>
-          </div>
-        </div>
-        <p class="altBaslik">Her sayfa seni bir gezegen daha yükseğe taşır. Oku, yüksel, galaksiyi keşfet! ✨</p>
-      </header>
+    <div class="badges-row" id="badges-row"></div>
 
-      <main>
-        <div class="anaSekmeler">
-          <button class="anaSekmeBtn aktif" data-anasekme="panom" type="button">🚀 Panom</button>
-          <button class="anaSekmeBtn" data-anasekme="kasifler" type="button">🧑‍🚀 Kaşifler</button>
-          <button class="anaSekmeBtn" data-anasekme="ucus-gunlugu" type="button">📋 Uçuş Günlüğü</button>
-          <button class="anaSekmeBtn" data-anasekme="yildiz-kutuphanesi" type="button">📚 Yıldız Kütüphanesi</button>
-          <button class="anaSekmeBtn" data-anasekme="kargo" type="button">📦 Kargo Ambarı</button>
-          <button class="anaSekmeBtn" data-anasekme="oduller" type="button">🎁 Ödüller</button>
-          <button class="anaSekmeBtn" data-anasekme="atlas" type="button">🗺️ Atlas</button>
-          <button class="anaSekmeBtn" data-anasekme="tren" type="button">🚂 Hızlı Okuma Treni</button>
-        </div>
+    <div class="section-title" id="dragon-section-title">🐉 Ejder Koleksiyonu — Seviye atladıkça yeni ejder kazanırsın!</div>
+    <div class="dragon-grid" id="dragon-grid"></div>
 
-        <!-- ====================== -->
-        <!-- SEKME: PANOM -->
-        <!-- ====================== -->
-        <div id="anasekme-panom" class="anaSekmeIcerik">
-          <section id="kisiKartlari" class="kisiKartGrid"></section>
+    <div class="section-title">📁 Açık Vakalar — Bir görev seç, ipuçlarını topla!</div>
+    <div class="case-grid" id="case-grid"></div>
+  </div>
+</section>
 
-          <!-- ====================== -->
-          <!-- İSTATİSTİKLER -->
-          <!-- ====================== -->
-          <section class="kart">
-            <h2>🎛️ Uçuş İstasyonu</h2>
-            <div class="istatistikGrid">
-              <div class="istatistikKart">
-                <h3>📖 Toplam Sayfa</h3>
-                <h2 id="toplamSayfaGenel">0</h2>
-              </div>
-              <div class="istatistikKart">
-                <h3>📚 Toplam Kitap</h3>
-                <h2 id="toplamKitapGenel">0</h2>
-              </div>
-              <div class="istatistikKart">
-                <h3>🏆 En Yüksek Uçuş</h3>
-                <h2 id="lider">-</h2>
-              </div>
-            </div>
-          </section>
+<!-- GAME -->
+<section id="screen-game" class="screen">
+  <div class="game-header">
+    <button class="back-link" id="btn-back"><span class="back-badge">🏠</span> Karargâha Dön</button>
+    <div class="gtitle" id="g-title"></div>
+    <div class="gmeta" id="g-meta"></div>
+  </div>
+  <div class="game-stage" id="game-stage"></div>
+</section>
 
-          <!-- ====================== -->
-          <!-- GRAFİK -->
-          <!-- ====================== -->
-          <section class="kart">
-            <h2>📡 Sinyal Grafiği</h2>
-            <div style="height: 300px">
-              <canvas id="okumaGrafik"></canvas>
-            </div>
-          </section>
-
-          <!-- ====================== -->
-          <!-- GELİŞİM GRAFİĞİ -->
-          <!-- ====================== -->
-          <section class="kart">
-            <h2>📈 Gelişim Grafiği</h2>
-            <p class="aciklamaMetni">Zaman içinde toplam okunan sayfa — her kaşif için ayrı bir çizgi.</p>
-            <div style="height: 300px; position: relative;">
-              <canvas id="gelisimGrafik"></canvas>
-              <p id="gelisimGrafikBos" class="bosDurum" style="display:none;">📊 Gelişim grafiği için en az iki farklı günde okuma kaydı gerekiyor.</p>
-            </div>
-          </section>
-        </div>
-
-        <!-- ====================== -->
-        <!-- SEKME: KAŞİFLER & KAYIT -->
-        <!-- ====================== -->
-        <div id="anasekme-kasifler" class="anaSekmeIcerik" style="display:none;">
-          <!-- ====================== -->
-          <!-- KİŞİ YÖNETİMİ -->
-          <!-- ====================== -->
-          <section class="kart">
-            <h2>🧑‍🚀 Kaşif Yönetimi</h2>
-            <div class="satirGrup">
-              <input type="text" id="yeniKisi" placeholder="Kaşifin Adı" />
-              <button id="kisiEkleBtn" class="btn btn-primary">➕ Kaşif Ekle</button>
-            </div>
-            <label class="kucukEtiket">Kayıtlı Kaşifler</label>
-            <select id="kisiListesi" size="4"></select>
-          </section>
-
-          <!-- ====================== -->
-          <!-- YENİ OKUMA KAYDI -->
-          <!-- ====================== -->
-          <section class="kart">
-            <h2>📡 Yeni Uçuş Kaydı</h2>
-
-            <div class="formGrid">
-              <div class="formAlan">
-                <label>Kaşif</label>
-                <select id="kisi"></select>
-              </div>
-
-              <div class="formAlan">
-                <label>Tarih</label>
-                <div class="tarihKutusu">
-                  <span>📅</span>
-                  <input type="date" id="tarih" />
-                </div>
-              </div>
-
-              <div class="formAlan">
-                <label>Kitap Adı</label>
-                <input type="text" id="kitapAdi" placeholder="Örn. Küçük Prens" />
-              </div>
-
-              <div class="formAlan">
-                <label>Yazar</label>
-                <input type="text" id="yazar" placeholder="Örn. Antoine de Saint-Exupéry" />
-              </div>
-
-              <div class="formAlan">
-                <label>Kitabın Toplam Sayfası</label>
-                <input type="number" id="toplamSayfa" min="0" placeholder="Örn. 120" />
-              </div>
-
-              <div class="formAlan">
-                <label>Bugün Okunan Sayfa</label>
-                <input type="number" id="okunanSayfa" min="0" placeholder="Örn. 20" />
-              </div>
-
-              <div class="formAlan formAlanGenis">
-                <label>📎 Dosya Ekle (isteğe bağlı — PDF veya Excel)</label>
-                <input type="file" id="kayitDosya" accept=".pdf,.xlsx,.xls" />
-              </div>
-            </div>
-
-            <div class="butonGrup">
-              <button id="kaydetBtn" class="btn btn-primary">💾 Kaydı Ekle</button>
-              <button id="iptalBtn" class="btn btn-ghost" style="display:none;">✖ İptal</button>
-            </div>
-
-            <div class="excelGrup">
-              <button id="excelAktarBtn" class="btn btn-success">📥 Excel'e Aktar</button>
-
-              <input type="file" id="excelDosya" accept=".xlsx,.xls" style="display:none" />
-              <button id="excelYukleBtn" class="btn btn-secondary" onclick="document.getElementById('excelDosya').click()">
-                📤 Excel'den Yükle
-              </button>
-            </div>
-          </section>
-
-          <!-- ====================== -->
-          <!-- DEVAM EDEN KİTAPLAR -->
-          <!-- ====================== -->
-          <section class="kart">
-            <h2>🛰️ Devam Eden Görevler</h2>
-            <div id="devamEdenKitaplar" class="devamListesi"></div>
-          </section>
-        </div>
-
-        <!-- ====================== -->
-        <!-- SEKME: UÇUŞ GÜNLÜĞÜ -->
-        <!-- ====================== -->
-        <div id="anasekme-ucus-gunlugu" class="anaSekmeIcerik" style="display:none;">
-          <section class="kart">
-            <h2>📋 Uçuş Günlüğü</h2>
-            <div class="tabloKapsayici tabloSinirli">
-              <table id="kayitTablosu">
-                <thead>
-                  <tr>
-                    <th>Tarih</th>
-                    <th>Kaşif</th>
-                    <th>Kitap</th>
-                    <th>Yazar</th>
-                    <th>Sayfa</th>
-                    <th>Dosya</th>
-                    <th>İşlem</th>
-                  </tr>
-                </thead>
-                <tbody id="kayitlarBody"></tbody>
-              </table>
-            </div>
-          </section>
-        </div>
-
-        <!-- ====================== -->
-        <!-- SEKME: YILDIZ KÜTÜPHANESİ -->
-        <!-- ====================== -->
-        <div id="anasekme-yildiz-kutuphanesi" class="anaSekmeIcerik" style="display:none;">
-          <section class="kart">
-            <h2>📚 Yıldız Kütüphanesi</h2>
-            <div class="tabloKapsayici tabloSinirli">
-              <table id="arsivTablosu">
-                <thead>
-                  <tr>
-                    <th>Kitap</th>
-                    <th>Yazar</th>
-                    <th>Kaşif</th>
-                    <th>Sayfa</th>
-                    <th>Durum</th>
-                  </tr>
-                </thead>
-                <tbody id="arsivBody"></tbody>
-              </table>
-            </div>
-          </section>
-        </div>
-
-        <!-- ====================== -->
-        <!-- SEKME: KARGO AMBARI -->
-        <!-- ====================== -->
-        <div id="anasekme-kargo" class="anaSekmeIcerik" style="display:none;">
-          <section class="kart">
-            <h2>📦 Kargo Ambarı</h2>
-            <p class="aciklamaMetni">PDF veya Excel dosyalarını kargo ambarına ekle, istediğin zaman indir. Dosyalar sadece bu tarayıcıda saklanır (maks. 4MB).</p>
-            <div class="satirGrup">
-              <input type="file" id="dosyaArsivInput" accept=".pdf,.xlsx,.xls" />
-            </div>
-            <div id="dosyaArsiviListesi" class="dosyaListesi"></div>
-          </section>
-        </div>
-
-        <!-- ====================== -->
-        <!-- SEKME: ÖDÜLLER REHBERİ -->
-        <!-- ====================== -->
-        <div id="anasekme-oduller" class="anaSekmeIcerik" style="display:none;">
-          <section class="kart">
-            <h2>🎁 Ödüller Rehberi</h2>
-            <p class="aciklamaMetni">Okudukça açılan tüm ödüller ve nasıl kazanılacakları burada!</p>
-            <div id="odullerRehberi"></div>
-          </section>
-        </div>
-
-        <!-- ====================== -->
-        <!-- SEKME: ÇOCUK DÜNYA ATLASI -->
-        <!-- ====================== -->
-        <div id="anasekme-atlas" class="anaSekmeIcerik" style="display:none;">
-          <section class="kart atlasBolumu">
-            <h2>🗺️ Çocuk Dünya Atlası</h2>
-            <p class="aciklamaMetni">Dünyayı keşfet! Ülkeler, uzay, yer altı ve deniz altı hakkında eğlenceli bilgiler. Bir karta dokun, sayfası açılsın!</p>
-
-            <div class="atlasSekmeler">
-              <button class="atlasSekmeBtn aktif" data-sekme="ulkeler" type="button">🌍 Ülkeler</button>
-              <button class="atlasSekmeBtn" data-sekme="turkiye" type="button">🇹🇷 Türkiye</button>
-              <button class="atlasSekmeBtn" data-sekme="uzay" type="button">🚀 Uzay</button>
-              <button class="atlasSekmeBtn" data-sekme="yeralti" type="button">⛏️ Yeraltı Dünyası</button>
-              <button class="atlasSekmeBtn" data-sekme="denizalti" type="button">🌊 Deniz Altı</button>
-            </div>
-
-            <div id="atlas-ulkeler" class="atlasIcerik ulkeGrid"></div>
-            <div id="atlas-turkiye" class="atlasIcerik ulkeGrid" style="display:none;"></div>
-            <div id="atlas-uzay" class="atlasIcerik" style="display:none;"></div>
-            <div id="atlas-yeralti" class="atlasIcerik" style="display:none;"></div>
-            <div id="atlas-denizalti" class="atlasIcerik" style="display:none;"></div>
-          </section>
-        </div>
-
-        <!-- ====================== -->
-        <!-- SEKME: HIZLI OKUMA TRENİ -->
-        <!-- Bağımsız bir mini uygulama — kendi HTML/CSS/JS dosyasında -->
-        <!-- izole çalışır, iframe ile burada gösterilir. -->
-        <!-- ====================== -->
-        <div id="anasekme-tren" class="anaSekmeIcerik" style="display:none;">
-          <section class="kart trenBolumu">
-            <h2>🚂 Hızlı Okuma Treni</h2>
-            <p class="aciklamaMetni">Kelime, cümle ve hikaye istasyonlarından geçerek okuma hızını artıran bağımsız bir alıştırma treni.</p>
-            <div class="trenCerceveKapsayici">
-              <iframe src="hizli-okuma-treni.html" class="trenCerceve" title="Hızlı Okuma Treni" loading="lazy"></iframe>
-            </div>
-          </section>
-        </div>
-
-        <footer>
-          <p>© 2026 Okuma Roketi — Her sayfa seni yıldızlara biraz daha yaklaştırır 🌌</p>
-        </footer>
-      </main>
+<!-- RESULT -->
+<section id="screen-result" class="screen">
+  <div class="result-card">
+    <div class="result-badge" id="result-emoji">🥇</div>
+    <div class="result-title" id="result-title">Vaka Çözüldü!</div>
+    <div id="result-sub" style="font-weight:700;color:#8a7f5c;font-size:0.9rem;"></div>
+    <div class="result-stats">
+      <div><span id="res-correct">0/0</span><small>DOĞRU</small></div>
+      <div><span id="res-points">0</span><small>KAZANILAN PUAN</small></div>
     </div>
-
-    <!-- ====================== -->
-    <!-- ATLAS DETAY PENCERESİ (kart tıklanınca "sayfa gibi" açılır) -->
-    <!-- ====================== -->
-    <div id="atlasModal" class="atlasModal" style="display:none;">
-      <div class="atlasModalKutu">
-        <button id="atlasModalKapat" type="button" class="atlasModalKapatBtn" title="Kapat">✕</button>
-        <div id="atlasModalIcerik"></div>
-      </div>
+    <div class="result-actions">
+      <button class="btn-secondary" id="btn-replay">🔁 Tekrar Oyna</button>
+      <button class="btn-primary" id="btn-home"><span class="back-badge">🏠</span> Karargâha Dön</button>
     </div>
+  </div>
+</section>
 
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="script.js"></script>
-  </body>
+<!-- VOICE PICKER MODAL -->
+<div class="modal-overlay" id="voice-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>🎙️ Anlatıcı Sesini Seç</h3>
+      <button class="modal-close" id="voice-modal-close">✕</button>
+    </div>
+    <p class="modal-hint">Çözümler bu sesle sana okunacak. Önce dinle, sonra seç!</p>
+    <div class="voice-grid" id="voice-grid"></div>
+  </div>
+</div>
+
+<!-- SOLUTION MODAL -->
+<div class="modal-overlay" id="solution-modal">
+  <div class="modal-box solution-box">
+    <div class="modal-head">
+      <h3>🔦 Çözüm Zamanı</h3>
+      <button class="modal-close" id="solution-modal-close">✕</button>
+    </div>
+    <div class="solution-steps" id="solution-steps"></div>
+    <div class="solution-controls">
+      <button class="pill-btn" id="sol-replay">🔊 Baştan Dinle</button>
+      <button class="pill-btn" id="sol-pause">⏸ Duraklat</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIDEO MODAL -->
+<div class="modal-overlay" id="video-modal">
+  <div class="modal-box video-box">
+    <div class="modal-head">
+      <h3>🎥 Videolu Anlatım</h3>
+      <button class="modal-close" id="video-modal-close">✕</button>
+    </div>
+    <p class="modal-hint">İnternet bağlantısı gerekir. Bir konu seç, izleyerek öğren!</p>
+    <div class="video-list" id="video-list"></div>
+    <div class="video-player-wrap" id="video-player-wrap" style="display:none;">
+      <button class="pill-btn" id="video-back">← Konulara Dön</button>
+      <div class="video-embed" id="video-embed"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DRAGON DETAIL MODAL -->
+<div class="modal-overlay" id="dragon-modal">
+  <div class="modal-box dragon-box">
+    <div class="modal-head">
+      <h3 id="dragon-modal-title">Ejder</h3>
+      <button class="modal-close" id="dragon-modal-close">✕</button>
+    </div>
+    <div class="dragon-display" id="dragon-display"></div>
+    <div class="dragon-info" id="dragon-info"></div>
+  </div>
+</div>
+
+<!-- DRAGON GIFT MODAL -->
+<div class="modal-overlay" id="gift-modal">
+  <div class="modal-box gift-box">
+    <div class="gift-title">🎁 Seviye Atladın! Yeni Ejder Kazandın!</div>
+    <div class="dragon-display gift-display" id="gift-display"></div>
+    <div class="dragon-info" id="gift-info"></div>
+    <button class="pill-btn gift-continue" id="gift-continue">Harika! ✨</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
 </html>
