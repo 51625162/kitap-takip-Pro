@@ -135,6 +135,48 @@ function verileriYukle() {
   dosyaArsivi = JSON.parse(localStorage.getItem(anahtar('dosyaArsivi'))) || [];
   evcilHayvanlar = JSON.parse(localStorage.getItem(anahtar('evcilHayvanlar'))) || {};
   evrimGosterildi = JSON.parse(localStorage.getItem(anahtar('evrimGosterildi'))) || {};
+
+  kisilerDuplikeTemizle();
+}
+
+// "TALHA" ve "Talha" gibi sadece büyük/küçük harfi farklı isimler yanlışlıkla
+// iki ayrı kaşif olarak eklenmiş olabilir (örn. isim kutusuna farklı yazılırsa).
+// Bu, ilerlemesi olan asıl kişinin yanında ilerlemesi sıfır görünen bir "hayalet"
+// kart oluşturur. Burada bu tür kopyalar otomatik olarak birleştirilir — ilk
+// eklenen isim esas alınır, kopyanın kayıtları (varsa) ona aktarılır, veri kaybı olmaz.
+function kisilerDuplikeTemizle() {
+  const normalize = s => String(s).trim().toLocaleLowerCase('tr');
+  const kanonikIsim = new Map(); // normalize edilmiş isim -> ilk görülen orijinal isim
+  const yeniKisiler = [];
+  let degisiklikVarMi = false;
+
+  kisiler.forEach(ad => {
+    const norm = normalize(ad);
+    if (kanonikIsim.has(norm)) {
+      degisiklikVarMi = true;
+    } else {
+      kanonikIsim.set(norm, ad);
+      yeniKisiler.push(ad);
+    }
+  });
+
+  if (!degisiklikVarMi) return;
+
+  kayitlar.forEach(k => {
+    const kanonik = kanonikIsim.get(normalize(k.kisi));
+    if (kanonik) k.kisi = kanonik;
+  });
+
+  const yeniEvcilHayvanlar = {};
+  Object.keys(evcilHayvanlar).forEach(isim => {
+    const kanonik = kanonikIsim.get(normalize(isim)) || isim;
+    if (!yeniEvcilHayvanlar[kanonik]) yeniEvcilHayvanlar[kanonik] = evcilHayvanlar[isim];
+  });
+
+  kisiler = yeniKisiler;
+  evcilHayvanlar = yeniEvcilHayvanlar;
+  kaydetVeri();
+  kaydetEvcilHayvanlar();
 }
 
 function kaydetVeri() {
@@ -401,7 +443,10 @@ function kisiEkle() {
   const ad = input.value.trim();
 
   if (ad === '') { alert('Kişi adı giriniz.'); return; }
-  if (kisiler.includes(ad)) { alert('Bu kişi zaten kayıtlı.'); return; }
+  if (kisiler.some(k => k.trim().toLocaleLowerCase('tr') === ad.toLocaleLowerCase('tr'))) {
+    alert('Bu kişi zaten kayıtlı.');
+    return;
+  }
 
   kisiler.push(ad);
   kaydetVeri();
@@ -1171,11 +1216,13 @@ function excelYukle(event) {
       let eklenen = 0;
 
       satirlar.forEach(satir => {
-        const kisi = String(satir.Kisi || satir.kisi || '').trim();
+        const kisiHam = String(satir.Kisi || satir.kisi || '').trim();
         const kitap = String(satir.Kitap || satir.kitap || '').trim();
-        if (!kisi || !kitap) return;
+        if (!kisiHam || !kitap) return;
 
-        if (!kisiler.includes(kisi)) kisiler.push(kisi);
+        const mevcut = kisiler.find(k => k.trim().toLocaleLowerCase('tr') === kisiHam.toLocaleLowerCase('tr'));
+        const kisi = mevcut || kisiHam;
+        if (!mevcut) kisiler.push(kisiHam);
 
         kayitlar.push({
           kisi,
