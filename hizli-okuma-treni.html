@@ -211,6 +211,53 @@
   .sentence-box span{ transition: all 0.15s ease; padding:2px 4px; border-radius:6px; }
   .sentence-box span.hi{ background: var(--sun); color:var(--navy); }
 
+  /* saccade / eye-jump */
+  .saccade-track{
+    position:relative;
+    height:90px;
+    background:#f3f8fc;
+    border-radius:20px;
+    margin-bottom:20px;
+    border:3px dashed var(--sun);
+    overflow:hidden;
+  }
+  .saccade-ball{
+    position:absolute;
+    top:50%;
+    left:6%;
+    transform:translate(0,-50%);
+    font-size:2.2rem;
+    transition: left 0.25s ease;
+  }
+  .saccade-ball.right{ left:88%; }
+
+  /* column scan */
+  .column-box{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    background:#f3f8fc;
+    border-radius:20px;
+    padding:18px;
+    margin-bottom:20px;
+    min-height:220px;
+    justify-content:center;
+  }
+  .column-box .col-word{
+    font-size:1.3rem;
+    font-weight:700;
+    padding:4px 16px;
+    border-radius:8px;
+    color:#9fb0c4;
+    transition: all .15s ease;
+  }
+  .column-box .col-word.hi{
+    color: var(--navy);
+    background: var(--sun);
+    transform: scale(1.08);
+  }
+
   /* story */
   .story-box{
     font-size:1.25rem;
@@ -294,6 +341,14 @@
     </div>
     <div class="station" id="st2">
       <div class="dot">3</div>
+      <span class="station-label">Göz Sıçrama<br>İstasyonu</span>
+    </div>
+    <div class="station" id="st3">
+      <div class="dot">4</div>
+      <span class="station-label">Sütun Tarama<br>İstasyonu</span>
+    </div>
+    <div class="station" id="st4">
+      <div class="dot">5</div>
       <span class="station-label">Hikaye<br>İstasyonu</span>
     </div>
   </div>
@@ -352,11 +407,66 @@
         <div class="big">🌟 Süper!</div>
         <p>Tüm cümleleri tamamladın.</p>
       </div>
+      <button class="btn green" id="toSaccade">Göz Sıçrama İstasyonuna Geç →</button>
+    </div>
+  </section>
+
+  <!-- STATION 3: SACCADE / EYE-JUMP -->
+  <section class="card" id="stage-saccade" style="display:none;">
+    <h2>👀 Göz Sıçrama İstasyonu</h2>
+    <p class="sub">Başını hareket ettirmeden sadece gözlerinle kırmızı topu takip et.</p>
+
+    <div class="speed-control">
+      <label for="saccadeSpeed">⏱️ Hız:</label>
+      <input type="range" id="saccadeSpeed" min="400" max="1400" step="100" value="900">
+      <span class="speed-val" id="saccadeSpeedVal">Orta</span>
+    </div>
+
+    <div class="saccade-track">
+      <div class="saccade-ball" id="saccadeBall">🔴</div>
+    </div>
+
+    <div class="row">
+      <button class="btn" id="startSaccade">▶️ Başlat</button>
+      <span id="saccadeCounter" style="font-weight:800; color:#5a7290;"></span>
+    </div>
+
+    <div id="saccadeDone" style="display:none; margin-top:18px;">
+      <div class="result-box">
+        <div class="big">👁️ Gözlerin çok çevik!</div>
+        <p>Göz sıçrama alıştırmasını tamamladın.</p>
+      </div>
+      <button class="btn green" id="toColumn">Sütun Tarama İstasyonuna Geç →</button>
+    </div>
+  </section>
+
+  <!-- STATION 4: COLUMN SCAN -->
+  <section class="card" id="stage-column" style="display:none;">
+    <h2>🔍 Sütun Tarama İstasyonu</h2>
+    <p class="sub">Kelimeler yukarıdan aşağıya sırayla parlayacak, her birini hızlıca oku.</p>
+
+    <div class="speed-control">
+      <label for="columnSpeed">⏱️ Hız:</label>
+      <input type="range" id="columnSpeed" min="300" max="1000" step="50" value="600">
+      <span class="speed-val" id="columnSpeedVal">Orta</span>
+    </div>
+
+    <div class="column-box" id="columnBox"></div>
+
+    <div class="row">
+      <button class="btn" id="startColumn">▶️ Sütunu Başlat</button>
+    </div>
+
+    <div id="columnDone" style="display:none; margin-top:18px;">
+      <div class="result-box">
+        <div class="big">🔍 Taramayı tamamladın!</div>
+        <p>Gözlerin yukarıdan aşağıya çok hızlı süzüldü.</p>
+      </div>
       <button class="btn green" id="toStory">Hikaye İstasyonuna Geç →</button>
     </div>
   </section>
 
-  <!-- STATION 3: STORY + QUIZ -->
+  <!-- STATION 5: STORY + QUIZ -->
   <section class="card" id="stage-story" style="display:none;">
     <h2>📚 Hikaye İstasyonu</h2>
     <p class="sub">Hikayeyi kendi hızında oku, bitince "Okudum" a bas.</p>
@@ -425,10 +535,13 @@
   });
 
   // ---------- Progress / train ----------
-  const stationsEls = [document.getElementById('st0'), document.getElementById('st1'), document.getElementById('st2')];
+  const stationsEls = [
+    document.getElementById('st0'), document.getElementById('st1'), document.getElementById('st2'),
+    document.getElementById('st3'), document.getElementById('st4')
+  ];
   const trackFill = document.getElementById('trackFill');
   const train = document.getElementById('train');
-  const positions = [2, 50, 98]; // percent along track
+  const positions = [2, 25, 50, 75, 98]; // percent along track
 
   function setProgress(stationIndex, completed){
     // move train
@@ -443,7 +556,7 @@
   setProgress(0, false);
 
   function showStage(id){
-    ['stage-words','stage-sentences','stage-story'].forEach(s=>{
+    ['stage-words','stage-sentences','stage-saccade','stage-column','stage-story'].forEach(s=>{
       document.getElementById(s).style.display = (s===id) ? 'block' : 'none';
     });
     document.getElementById(id).scrollIntoView({behavior:'smooth', block:'start'});
@@ -575,16 +688,129 @@
 
   startSentenceBtn.addEventListener('click', playSentence);
 
-  document.getElementById('toStory').addEventListener('click', ()=>{
+  document.getElementById('toSaccade').addEventListener('click', ()=>{
     setProgress(1, true);
     setProgress(2, false);
-    showStage('stage-story');
+    showStage('stage-saccade');
   });
 
-  // ---------- STATION 3: story + timer + quiz ----------
+  // ---------- STATION 3: saccade / eye-jump ----------
+  let saccadeSpeedMs = 900;
+  const saccadeSpeedSlider = document.getElementById('saccadeSpeed');
+  const saccadeSpeedVal = document.getElementById('saccadeSpeedVal');
+  function updateSaccadeSpeedLabel(){
+    const v = Number(saccadeSpeedSlider.value);
+    saccadeSpeedMs = v;
+    let label = "Orta";
+    if(v >= 1100) label = "Yavaş 🐢";
+    else if(v <= 600) label = "Hızlı ⚡";
+    saccadeSpeedVal.textContent = label;
+  }
+  saccadeSpeedSlider.addEventListener('input', updateSaccadeSpeedLabel);
+  updateSaccadeSpeedLabel();
+
+  const saccadeBall = document.getElementById('saccadeBall');
+  const startSaccadeBtn = document.getElementById('startSaccade');
+  const saccadeCounter = document.getElementById('saccadeCounter');
+  const saccadeDoneEl = document.getElementById('saccadeDone');
+  const SACCADE_TOTAL_JUMPS = 16;
+  let saccadeJumps = 0;
+  let saccadeTimer = null;
+  let saccadeRight = false;
+
+  function saccadeStep(){
+    saccadeRight = !saccadeRight;
+    saccadeBall.classList.toggle('right', saccadeRight);
+    playTick();
+    saccadeJumps++;
+    saccadeCounter.textContent = `Sıçrama ${Math.min(saccadeJumps, SACCADE_TOTAL_JUMPS)} / ${SACCADE_TOTAL_JUMPS}`;
+    if(saccadeJumps >= SACCADE_TOTAL_JUMPS){
+      clearInterval(saccadeTimer);
+      saccadeTimer = null;
+      startSaccadeBtn.disabled = true;
+      saccadeDoneEl.style.display = 'block';
+    }
+  }
+
+  startSaccadeBtn.addEventListener('click', ()=>{
+    saccadeJumps = 0;
+    saccadeRight = false;
+    saccadeBall.classList.remove('right');
+    saccadeCounter.textContent = `Sıçrama 0 / ${SACCADE_TOTAL_JUMPS}`;
+    startSaccadeBtn.disabled = true;
+    saccadeDoneEl.style.display = 'none';
+    saccadeTimer = setInterval(saccadeStep, saccadeSpeedMs);
+  });
+
+  document.getElementById('toColumn').addEventListener('click', ()=>{
+    setProgress(2, true);
+    setProgress(3, false);
+    showStage('stage-column');
+  });
+
+  // ---------- STATION 4: column scan ----------
+  const columnWords = ["hızlı","gökyüzü","kelebek","merhaba","yıldız","orman","masal","rüzgar","deniz","gülümse"];
+  let columnIndex = 0;
+  let columnTimer = null;
+  let columnSpeedMs = 600;
+
+  const columnSpeedSlider = document.getElementById('columnSpeed');
+  const columnSpeedVal = document.getElementById('columnSpeedVal');
+  function updateColumnSpeedLabel(){
+    const v = Number(columnSpeedSlider.value);
+    columnSpeedMs = v;
+    let label = "Orta";
+    if(v >= 800) label = "Yavaş 🐢";
+    else if(v <= 450) label = "Hızlı ⚡";
+    columnSpeedVal.textContent = label;
+  }
+  columnSpeedSlider.addEventListener('input', updateColumnSpeedLabel);
+  updateColumnSpeedLabel();
+
+  const columnBox = document.getElementById('columnBox');
+  const startColumnBtn = document.getElementById('startColumn');
+  const columnDoneEl = document.getElementById('columnDone');
+
+  function renderColumnWords(){
+    columnBox.innerHTML = columnWords.map(w => `<div class="col-word">${w}</div>`).join('');
+  }
+  renderColumnWords();
+
+  function columnStep(){
+    const items = columnBox.querySelectorAll('.col-word');
+    items.forEach(it=>it.classList.remove('hi'));
+    if(columnIndex < items.length){
+      items[columnIndex].classList.add('hi');
+      playTick();
+      columnIndex++;
+    } else {
+      clearInterval(columnTimer);
+      columnTimer = null;
+      startColumnBtn.disabled = true;
+      columnDoneEl.style.display = 'block';
+    }
+  }
+
+  startColumnBtn.addEventListener('click', ()=>{
+    columnIndex = 0;
+    renderColumnWords();
+    startColumnBtn.disabled = true;
+    columnDoneEl.style.display = 'none';
+    columnTimer = setInterval(columnStep, columnSpeedMs);
+  });
+
+  document.getElementById('toStory').addEventListener('click', ()=>{
+    setProgress(3, true);
+    setProgress(4, false);
+    showStage('stage-story');
+    startStoryTimer();
+  });
+
+  // ---------- STATION 5: story + timer + quiz ----------
   const storyWordCount = 62; // approx word count of story text
   let storyStart = null;
   let storyInterval = null;
+  let storyTickInterval = null;
   const storyTimerEl = document.getElementById('storyTimer');
   const finishReadingBtn = document.getElementById('finishReading');
   const storyReadingEl = document.getElementById('storyReading');
@@ -593,11 +819,15 @@
   const quizAreaEl = document.getElementById('quizArea');
   const storyDoneEl = document.getElementById('storyDone');
 
-  storyStart = Date.now();
-  storyInterval = setInterval(()=>{
-    const sec = Math.floor((Date.now() - storyStart)/1000);
-    storyTimerEl.textContent = `⏱️ ${sec} sn`;
-  }, 500);
+  function startStoryTimer(){
+    storyStart = Date.now();
+    storyInterval = setInterval(()=>{
+      const sec = Math.floor((Date.now() - storyStart)/1000);
+      storyTimerEl.textContent = `⏱️ ${sec} sn`;
+    }, 500);
+    // Hikaye istasyonunda da metronom duyulsun diye saniyede bir tık — okuma hızını zorlamaz, sadece nabzı hissettirir.
+    storyTickInterval = setInterval(playTick, 1000);
+  }
 
   const quiz = [
     { q: "Kedinin adı nedir?", opts: ["Minik","Pamuk","Boncuk"], correct: 0 },
@@ -609,6 +839,7 @@
 
   finishReadingBtn.addEventListener('click', ()=>{
     clearInterval(storyInterval);
+    clearInterval(storyTickInterval);
     const seconds = Math.max(1, Math.floor((Date.now() - storyStart)/1000));
     const wpm = Math.round((storyWordCount / seconds) * 60);
     storyReadingEl.style.display = 'none';
@@ -648,7 +879,7 @@
   function showFinalResult(){
     storyQuizEl.style.display = 'none';
     storyDoneEl.style.display = 'block';
-    setProgress(2, true);
+    setProgress(4, true);
     const starsEl = document.getElementById('finalStars');
     const starCount = quizScore; // out of 3
     starsEl.textContent = "⭐".repeat(starCount) + "☆".repeat(3-starCount);
