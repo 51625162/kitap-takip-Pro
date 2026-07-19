@@ -55,6 +55,7 @@
           <button class="anaSekmeBtn" data-anasekme="kargo" type="button">📦 Kargo Ambarı</button>
           <button class="anaSekmeBtn" data-anasekme="oduller" type="button">🎁 Ödüller</button>
           <button class="anaSekmeBtn" data-anasekme="atlas" type="button">🗺️ Atlas</button>
+          <button class="anaSekmeBtn" data-anasekme="tren" type="button">🚂 Hızlı Okuma Treni</button>
         </div>
 
         <!-- ====================== -->
@@ -288,6 +289,21 @@
             <div id="atlas-uzay" class="atlasIcerik" style="display:none;"></div>
             <div id="atlas-yeralti" class="atlasIcerik" style="display:none;"></div>
             <div id="atlas-denizalti" class="atlasIcerik" style="display:none;"></div>
+          </section>
+        </div>
+
+        <!-- ====================== -->
+        <!-- SEKME: HIZLI OKUMA TRENİ -->
+        <!-- Bağımsız bir mini uygulama — kendi HTML/CSS/JS dosyasında -->
+        <!-- izole çalışır, iframe ile burada gösterilir. -->
+        <!-- ====================== -->
+        <div id="anasekme-tren" class="anaSekmeIcerik" style="display:none;">
+          <section class="kart trenBolumu">
+            <h2>🚂 Hızlı Okuma Treni</h2>
+            <p class="aciklamaMetni">Kelime, cümle ve hikaye istasyonlarından geçerek okuma hızını artıran bağımsız bir alıştırma treni.</p>
+            <div class="trenCerceveKapsayici">
+              <iframe src="hizli-okuma-treni.html" class="trenCerceve" title="Hızlı Okuma Treni" loading="lazy"></iframe>
+            </div>
           </section>
         </div>
 
