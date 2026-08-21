@@ -263,6 +263,14 @@ function sesBaglaminiAl() {
   return sesBaglami;
 }
 
+// Tarayıcılar, kullanıcı hiç dokunmadan otomatik ses çalınmasını engeller.
+// Bazı sesler (örn. yeni evrim kutlaması) doğrudan bir tıklamadan değil,
+// ekran güncellenirken kendiliğinden tetiklenebiliyor — özellikle sayfa zaten
+// girişliyken yeniden açıldığında. Bunu önlemek için sayfadaki ilk dokunuşta/
+// tıklamada ses altyapısının kilidini erkenden açıyoruz.
+document.addEventListener('pointerdown', sesBaglaminiAl, { capture: true });
+document.addEventListener('keydown', sesBaglaminiAl, { capture: true });
+
 function tonCal(frekans, sure, tur = 'sine', gecikme = 0, sesSeviyesi = 0.2) {
   const ctx = sesBaglaminiAl();
   if (!ctx) return;
