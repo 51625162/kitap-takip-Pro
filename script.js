@@ -1,1125 +1,1642 @@
-/* ============================= VERİ MODELİ ============================= */
-function daysAgoISO(n){
-  const d = new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10);
-}
-function seedHistory(historyArr, kod, guncel, dunku, hafta, yil, ucYil){
-  historyArr.push(
-    {kod, tarih: daysAgoISO(1095), fiyat: ucYil},
-    {kod, tarih: daysAgoISO(365), fiyat: yil},
-    {kod, tarih: daysAgoISO(7), fiyat: hafta},
-    {kod, tarih: daysAgoISO(1), fiyat: dunku},
-    {kod, tarih: daysAgoISO(0), fiyat: guncel},
-  );
-}
+// ============================================================
+//  OKUMA ROKETİ — Kitap Takip
+//  Veri kullanıcı bazlı ayrılır: TALHA ve ZEYNEP birbirinden
+//  tamamen bağımsız kendi kayıtlarını görür (localStorage anahtarı
+//  kullanıcı adına göre son ek alır, örn. 'kitapKayitlari_TALHA').
+//  Eski (kullanıcısız) veriler otomatik olarak TALHA'ya taşınır —
+//  hiçbir kayıt silinmez.
+// ============================================================
 
-const PORTFOLIOS = {
-  bist: {
-    label:"BIST Portföy", currency:"TL", accent:"#d9a441", idLabel:"Hisse Kodu",
-    rows:[
-      {id:1, kod:"ASELS", adet:500, alis:62.50, alisTarihi:"2025-03-10", guncel:68.90},
-      {id:2, kod:"THYAO", adet:200, alis:275.00, alisTarihi:"2025-06-02", guncel:298.50},
-      {id:3, kod:"OTOKAR", adet:50, alis:1450.00, alisTarihi:"2024-11-20", guncel:1620.00},
-      {id:4, kod:"LOGO", adet:300, alis:38.20, alisTarihi:"2025-01-15", guncel:41.10},
-      {id:5, kod:"PGSUS", adet:100, alis:410.00, alisTarihi:"2025-05-05", guncel:455.00},
+const KULLANICILAR = {
+  TALHA: { sifre: '54321' },
+  ZEYNEP: { sifre: '190344' },
+};
+
+let aktifKullanici = localStorage.getItem('aktifKullanici') || null;
+
+let kayitlar = [];
+let kisiler = [];
+let dosyaArsivi = [];
+let evcilHayvanlar = {}; // { "İsim": "kedi" }
+let evrimGosterildi = {}; // { "İsim": son gösterilen evrim aşaması } — ses/kutlama tekrarını önler
+
+let duzenlenenIndex = -1;
+let grafik = null;
+let gelisimGrafik = null;
+
+const RENKLER = ['#F6B93B', '#FF6F91', '#3DDC97', '#5D9CEC', '#B98CE0', '#FF9F43', '#5AC8FA'];
+
+// Kupa: her KAÇ tamamlanan kitapta bir kupa kazanılır.
+const KUPA_ARALIGI = 25;
+
+// Evrim eşikleri: bu kadar KİTAP TAMAMLAYINCA hayvan bir üst forma geçer.
+const EVRIM_ESIKLERI = [50, 100, 150, 200];
+
+const HAYVAN_TURLERI = {
+  kedi: {
+    ad: 'Kedigiller Ailesi',
+    asamalar: [
+      { ad: 'Yavru Kedi', emoji: '🐱' },
+      { ad: 'Genç Panter', emoji: '🐆' },
+      { ad: 'Kaplan', emoji: '🐅' },
+      { ad: 'Efsanevi Altın Aslan', emoji: '🦁' },
     ],
-    history:[],
   },
-  abd: {
-    label:"ABD Portföy", currency:"$", accent:"#4f8fd1", idLabel:"Hisse Kodu",
-    rows:[
-      {id:1, kod:"AAPL", adet:20, alis:175.00, alisTarihi:"2025-02-10", guncel:214.50},
-      {id:2, kod:"MSFT", adet:15, alis:340.00, alisTarihi:"2025-04-05", guncel:415.00},
-      {id:3, kod:"NVDA", adet:30, alis:480.00, alisTarihi:"2025-01-20", guncel:890.00},
-      {id:4, kod:"TSLA", adet:10, alis:210.00, alisTarihi:"2025-06-12", guncel:245.00},
-      {id:5, kod:"AMZN", adet:12, alis:145.00, alisTarihi:"2025-03-18", guncel:188.00},
+  kertenkele: {
+    ad: 'Ejderha Ailesi',
+    asamalar: [
+      { ad: 'Yavru Kertenkele', emoji: '🦎' },
+      { ad: 'Ejderha Yavrusu', emoji: '🐉' },
+      { ad: 'Genç Ejderha', emoji: '🐲' },
+      { ad: 'Efsanevi Gökkuşağı Ejderhası', emoji: '🐉' },
     ],
-    history:[],
   },
-  fon: {
-    label:"Fon Portföy", currency:"TL", accent:"#3fb6a8", idLabel:"Fon Kodu",
-    rows:[
-      {id:1, kod:"AFT", adet:1500, alis:1.85, alisTarihi:"2025-02-20", guncel:2.10},
-      {id:2, kod:"TTE", adet:800, alis:3.40, alisTarihi:"2025-05-15", guncel:3.72},
-      {id:3, kod:"GPB", adet:2000, alis:0.92, alisTarihi:"2025-01-08", guncel:1.05},
-      {id:4, kod:"IPJ", adet:600, alis:5.10, alisTarihi:"2025-06-25", guncel:5.55},
-      {id:5, kod:"MAC", adet:1200, alis:2.30, alisTarihi:"2025-03-30", guncel:2.48},
+  kurt: {
+    ad: 'Kurt Ailesi',
+    asamalar: [
+      { ad: 'Kurt Yavrusu', emoji: '🐺' },
+      { ad: 'Genç Kurt', emoji: '🐺' },
+      { ad: 'Kutup Kurdu', emoji: '🐺' },
+      { ad: 'Efsanevi Ay Kurdu', emoji: '🌕' },
     ],
-    history:[],
   },
-  kripto: {
-    label:"Kripto Portföy", currency:"$", accent:"#e0954f", idLabel:"Kripto Kodu",
-    rows:[
-      {id:1, kod:"BTC", adet:0.25, alis:52000.00, alisTarihi:"2025-02-05", guncel:68500.00},
-      {id:2, kod:"ETH", adet:3.5, alis:2800.00, alisTarihi:"2025-04-12", guncel:3450.00},
-      {id:3, kod:"SOL", adet:40, alis:110.00, alisTarihi:"2025-05-20", guncel:158.00},
-      {id:4, kod:"XRP", adet:2000, alis:0.55, alisTarihi:"2025-03-08", guncel:0.72},
-      {id:5, kod:"BNB", adet:8, alis:410.00, alisTarihi:"2025-06-01", guncel:520.00},
+  kus: {
+    ad: 'Kuş Ailesi',
+    asamalar: [
+      { ad: 'Yavru Kuş', emoji: '🐣' },
+      { ad: 'Genç Şahin', emoji: '🦅' },
+      { ad: 'Kartal', emoji: '🦅' },
+      { ad: 'Efsanevi Anka Kuşu', emoji: '🔥' },
     ],
-    history:[],
+  },
+  balik: {
+    ad: 'Deniz Ailesi',
+    asamalar: [
+      { ad: 'Yavru Balık', emoji: '🐠' },
+      { ad: 'Genç Yunus', emoji: '🐬' },
+      { ad: 'Deniz Canavarı', emoji: '🐋' },
+      { ad: 'Efsanevi Deniz Ejderhası', emoji: '🐉' },
+    ],
   },
 };
 
-seedHistory(PORTFOLIOS.kripto.history, "BTC", 68500.00, 67800.00, 65200.00, 42000.00, 18500.00);
-seedHistory(PORTFOLIOS.kripto.history, "ETH", 3450.00, 3400.00, 3200.00, 2200.00, 1200.00);
-seedHistory(PORTFOLIOS.kripto.history, "SOL", 158.00, 155.00, 145.00, 85.00, 22.00);
-seedHistory(PORTFOLIOS.kripto.history, "XRP", 0.72, 0.71, 0.66, 0.48, 0.32);
-seedHistory(PORTFOLIOS.kripto.history, "BNB", 520.00, 515.00, 495.00, 340.00, 210.00);
-
-seedHistory(PORTFOLIOS.bist.history, "ASELS", 68.90, 68.20, 66.10, 45.30, 22.10);
-seedHistory(PORTFOLIOS.bist.history, "THYAO", 298.50, 301.00, 290.00, 260.00, 130.00);
-seedHistory(PORTFOLIOS.bist.history, "OTOKAR", 1620.00, 1600.00, 1580.00, 1100.00, 650.00);
-seedHistory(PORTFOLIOS.bist.history, "LOGO", 41.10, 40.80, 39.50, 30.00, 18.50);
-seedHistory(PORTFOLIOS.bist.history, "PGSUS", 455.00, 450.00, 430.00, 350.00, 210.00);
-
-seedHistory(PORTFOLIOS.abd.history, "AAPL", 214.50, 213.00, 208.00, 180.00, 130.00);
-seedHistory(PORTFOLIOS.abd.history, "MSFT", 415.00, 412.50, 400.00, 340.00, 250.00);
-seedHistory(PORTFOLIOS.abd.history, "NVDA", 890.00, 875.00, 820.00, 480.00, 140.00);
-seedHistory(PORTFOLIOS.abd.history, "TSLA", 245.00, 250.00, 230.00, 180.00, 220.00);
-seedHistory(PORTFOLIOS.abd.history, "AMZN", 188.00, 186.00, 178.00, 150.00, 95.00);
-
-seedHistory(PORTFOLIOS.fon.history, "AFT", 2.10, 2.08, 2.02, 1.55, 0.95);
-seedHistory(PORTFOLIOS.fon.history, "TTE", 3.72, 3.70, 3.60, 2.90, 1.80);
-seedHistory(PORTFOLIOS.fon.history, "GPB", 1.05, 1.04, 1.00, 0.78, 0.48);
-seedHistory(PORTFOLIOS.fon.history, "IPJ", 5.55, 5.50, 5.35, 4.20, 2.60);
-seedHistory(PORTFOLIOS.fon.history, "MAC", 2.48, 2.46, 2.38, 1.95, 1.20);
-
-let nextId = {bist:6, abd:6, fon:6, kripto:6};
-let usdTry = 34.50; // kullanıcı güncelleyebilir
-
-const TAB_ORDER = ["bist","abd","fon","kripto","overview","macro"];
-let activeTab = "bist";
-let editingId = {bist:null, abd:null, fon:null, kripto:null};
-let searchTerm = {bist:"", abd:"", fon:"", kripto:""};
-let sortState = {bist:{col:null,dir:1}, abd:{col:null,dir:1}, fon:{col:null,dir:1}, kripto:{col:null,dir:1}};
-let historyEditor = null; // {key, rowId} açık olan fiyat geçmişi paneli
-
-/* ---------- Makroekonomik Veriler (bağımsız bölüm) ---------- */
-let macroNextId = 1;
-function mi(isim){ return {id: macroNextId++, isim, incelendi:false, tarih:null}; }
-const MACRO = {
-  categories: [
-    {key:"reel", label:"Reel Göstergeler", items:[
-      mi("Gayri Safi Yurtiçi Hasıla"), mi("İstihdam/İşsizlik Oranları"), mi("Elektrik Tüketimi"),
-      mi("Kapasite Kullanımı"), mi("Sanayi Üretim Endeksi"), mi("Perakende Satışlar/Tüketici Fiyatları"), mi("Tarımsal Üretim"),
-    ]},
-    {key:"mali", label:"Mali Göstergeler", items:[
-      mi("ÜFE/TÜFE/Enflasyon"), mi("Faiz"), mi("Döviz Kurları"), mi("Bütçe Açığı"), mi("Kredilerdeki Değişim"),
-      mi("Borsa Endeksi"), mi("Para Arzı"), mi("Cari İşlemler Açığı"), mi("İç/Dış Borç Stoku"),
-      mi("Turizm Gelirleri"), mi("İthalat/İhracat Rakamları"),
-    ]},
-    {key:"diger", label:"Diğer Göstergeler", items:[
-      mi("Derecelendirme Kuruluş Notu"), mi("IMF ve Dünya Bankası Raporları"),
-      mi("Avrupa Birliği Ekonomik Raporları"), mi("Politik Risk"), mi("Seçim Dönemleri"),
-    ]},
-    {key:"oncu", label:"Öncü Göstergeler", items:[
-      mi("Borsa Endeksleri"), mi("Yeni İşyerlerinin Açılması"), mi("İnşaat Ruhsatları"),
-      mi("Stoklardaki Değişim"), mi("Sanayide İşe Çıkarma Oranları"), mi("Satınalma Performansı"),
-    ]},
-    {key:"destek", label:"Destekleyici Göstergeler", items:[
-      mi("Sanayi Üretim Endeksleri"), mi("Sanayi ve Ticari Satışlar"), mi("Tarım Dışı İstihdam"),
-    ]},
-    {key:"gecikmeli", label:"Gecikmeli Göstergeler", items:[
-      mi("Sanayi ve Ticaret Stokları"), mi("Birim İşgücü Maliyetlerindeki Değişim"),
-      mi("Banka Faiz Oranları Değişimi"), mi("Tüketici Borç/Gelir Oranı"), mi("Ticari ve Sanayi Borçlarındaki Değişim"),
-    ]},
-  ],
-};
-
-/* ============================= KALICI SAKLAMA (localStorage) ============================= */
-const STORAGE_KEY = "portfoyTakipData_v1";
-let storageAvailable = true;
-
-function buildPayload(){
-  return {
-    usdTry,
-    nextId,
-    rows: { bist:PORTFOLIOS.bist.rows, abd:PORTFOLIOS.abd.rows, fon:PORTFOLIOS.fon.rows, kripto:PORTFOLIOS.kripto.rows },
-    history: { bist:PORTFOLIOS.bist.history, abd:PORTFOLIOS.abd.history, fon:PORTFOLIOS.fon.history, kripto:PORTFOLIOS.kripto.history },
-    macro: MACRO.categories,
-    macroNextId,
-  };
+// ------------------------------------------------------------
+// YARDIMCI FONKSİYONLAR
+// ------------------------------------------------------------
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[m]));
 }
 
-function applyPayload(payload){
-  if(!payload) return false;
-  if(payload.usdTry) usdTry = payload.usdTry;
-  if(payload.nextId) nextId = payload.nextId;
-  if(payload.rows){
-    ["bist","abd","fon","kripto"].forEach(k => { if(Array.isArray(payload.rows[k])) PORTFOLIOS[k].rows = payload.rows[k]; });
-  }
-  if(payload.history){
-    ["bist","abd","fon","kripto"].forEach(k => { if(Array.isArray(payload.history[k])) PORTFOLIOS[k].history = payload.history[k]; });
-  }
-  if(Array.isArray(payload.macro)) MACRO.categories = payload.macro;
-  if(payload.macroNextId) macroNextId = payload.macroNextId;
-  return true;
+function bugunYYYYMMDD() {
+  return new Date().toISOString().slice(0, 10);
 }
 
-function saveState(){
-  if(storageAvailable){
-    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(buildPayload())); }
-    catch(e){ storageAvailable = false; }
-  }
-  pushToCloud();
+function formatTarih(iso) {
+  if (!iso) return '-';
+  const parcalar = iso.split('-');
+  if (parcalar.length !== 3) return iso;
+  const [y, m, d] = parcalar;
+  return `${d}.${m}.${y}`;
 }
 
-function loadState(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw) applyPayload(JSON.parse(raw));
-  } catch(e){ storageAvailable = false; }
+function boyutFormatla(bayt) {
+  if (!bayt) return '0 B';
+  if (bayt < 1024) return bayt + ' B';
+  if (bayt < 1024 * 1024) return (bayt / 1024).toFixed(1) + ' KB';
+  return (bayt / 1024 / 1024).toFixed(1) + ' MB';
 }
 
-function resetToSamples(){
-  if(!confirm("Tüm veriler örnek başlangıç verilerine döndürülecek. Emin misiniz?")) return;
-  try{ localStorage.removeItem(STORAGE_KEY); } catch(e){}
-  location.reload();
+// ------------------------------------------------------------
+// KULLANICI BAZLI VERİ (her hesap kendi anahtarını kullanır)
+// ------------------------------------------------------------
+function anahtar(taban) {
+  return `${taban}_${aktifKullanici}`;
 }
 
-/* ---------- JSON dosyasıyla dışa / içe aktarma ---------- */
-function exportAllData(){
-  const payload = buildPayload();
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  const tarih = new Date().toISOString().slice(0,10);
-  a.href = url; a.download = `portfoy_yedek_${tarih}.json`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-function importAllData(file){
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try{
-      const payload = JSON.parse(e.target.result);
-      if(!payload || !payload.rows) throw new Error("geçersiz dosya");
-      applyPayload(payload);
-      saveState();
-      renderMain();
-      alert("Veriler başarıyla içe aktarıldı.");
-    } catch(err){
-      alert("Dosya okunamadı — geçerli bir portföy yedek dosyası (.json) seçtiğinizden emin olun.");
+function eskiVeriyiTalhaTasi() {
+  // İlk sürümde tek kullanıcı vardı ve anahtarlar son ek almıyordu.
+  // Bu veriyi kaybetmemek için bir kereliğine TALHA hesabına kopyalıyoruz.
+  ['kitapKayitlari', 'kisiler', 'dosyaArsivi', 'evcilHayvanlar'].forEach(taban => {
+    const eski = localStorage.getItem(taban);
+    const yeniAnahtar = `${taban}_TALHA`;
+    if (eski && !localStorage.getItem(yeniAnahtar)) {
+      localStorage.setItem(yeniAnahtar, eski);
     }
-  };
-  reader.readAsText(file);
+  });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const fileInput = document.getElementById("importFile");
-  if(fileInput){
-    fileInput.addEventListener("change", (e) => {
-      if(e.target.files && e.target.files[0]) importAllData(e.target.files[0]);
-      e.target.value = "";
-    });
+function verileriYukle() {
+  if (aktifKullanici === 'TALHA') eskiVeriyiTalhaTasi();
+
+  kayitlar = JSON.parse(localStorage.getItem(anahtar('kitapKayitlari'))) || [];
+  kisiler = JSON.parse(localStorage.getItem(anahtar('kisiler'))) || [];
+  dosyaArsivi = JSON.parse(localStorage.getItem(anahtar('dosyaArsivi'))) || [];
+  evcilHayvanlar = JSON.parse(localStorage.getItem(anahtar('evcilHayvanlar'))) || {};
+  evrimGosterildi = JSON.parse(localStorage.getItem(anahtar('evrimGosterildi'))) || {};
+
+  kisilerDuplikeTemizle();
+}
+
+// "TALHA" ve "Talha" gibi sadece büyük/küçük harfi farklı isimler yanlışlıkla
+// iki ayrı kaşif olarak eklenmiş olabilir (örn. isim kutusuna farklı yazılırsa).
+// Bu, ilerlemesi olan asıl kişinin yanında ilerlemesi sıfır görünen bir "hayalet"
+// kart oluşturur. Burada bu tür kopyalar otomatik olarak birleştirilir — ilk
+// eklenen isim esas alınır, kopyanın kayıtları (varsa) ona aktarılır, veri kaybı olmaz.
+function kisilerDuplikeTemizle() {
+  const normalize = s => String(s).trim().toLocaleLowerCase('tr');
+  const kanonikIsim = new Map(); // normalize edilmiş isim -> ilk görülen orijinal isim
+  const yeniKisiler = [];
+  let degisiklikVarMi = false;
+
+  kisiler.forEach(ad => {
+    const norm = normalize(ad);
+    if (kanonikIsim.has(norm)) {
+      degisiklikVarMi = true;
+    } else {
+      kanonikIsim.set(norm, ad);
+      yeniKisiler.push(ad);
+    }
+  });
+
+  if (!degisiklikVarMi) return;
+
+  kayitlar.forEach(k => {
+    const kanonik = kanonikIsim.get(normalize(k.kisi));
+    if (kanonik) k.kisi = kanonik;
+  });
+
+  const yeniEvcilHayvanlar = {};
+  Object.keys(evcilHayvanlar).forEach(isim => {
+    const kanonik = kanonikIsim.get(normalize(isim)) || isim;
+    if (!yeniEvcilHayvanlar[kanonik]) yeniEvcilHayvanlar[kanonik] = evcilHayvanlar[isim];
+  });
+
+  kisiler = yeniKisiler;
+  evcilHayvanlar = yeniEvcilHayvanlar;
+  kaydetVeri();
+  kaydetEvcilHayvanlar();
+}
+
+function kaydetVeri() {
+  localStorage.setItem(anahtar('kitapKayitlari'), JSON.stringify(kayitlar));
+  localStorage.setItem(anahtar('kisiler'), JSON.stringify(kisiler));
+}
+
+function kaydetDosyaArsivi() {
+  localStorage.setItem(anahtar('dosyaArsivi'), JSON.stringify(dosyaArsivi));
+}
+
+function kaydetEvcilHayvanlar() {
+  localStorage.setItem(anahtar('evcilHayvanlar'), JSON.stringify(evcilHayvanlar));
+}
+
+function kaydetEvrimGosterildi() {
+  localStorage.setItem(anahtar('evrimGosterildi'), JSON.stringify(evrimGosterildi));
+}
+
+function evrimAsamasi(kitapSayisi) {
+  let asama = -1;
+  EVRIM_ESIKLERI.forEach((esik, i) => { if (kitapSayisi >= esik) asama = i; });
+  return asama; // -1: henüz kilitli, 0-3: evrim aşaması
+}
+
+function evcilHayvanSec(isim, tur) {
+  if (!HAYVAN_TURLERI[tur]) return;
+  evcilHayvanlar[isim] = tur;
+  kaydetEvcilHayvanlar();
+  kisiKartlariniOlustur();
+}
+
+// ------------------------------------------------------------
+// GELİŞİM MESAJLARI (bu hafta / geçen hafta karşılaştırması)
+// ------------------------------------------------------------
+function haftalikSayfa(isim, kacGunOnce, kacGunSuresi) {
+  const bugun = new Date();
+  const bitis = new Date(bugun); bitis.setDate(bugun.getDate() - kacGunOnce);
+  const baslangic = new Date(bitis); baslangic.setDate(bitis.getDate() - kacGunSuresi);
+
+  return kayitlar
+    .filter(k => k.kisi === isim && k.tarih)
+    .filter(k => {
+      const t = new Date(k.tarih);
+      return t > baslangic && t <= bitis;
+    })
+    .reduce((toplam, k) => toplam + Number(k.okunanSayfa || 0), 0);
+}
+
+function gelisimMesajiOlustur(isim) {
+  const buHafta = haftalikSayfa(isim, 0, 7);
+  const gecenHafta = haftalikSayfa(isim, 7, 7);
+
+  if (buHafta === 0 && gecenHafta === 0) {
+    return { emoji: '🌱', metin: 'Yeni bir okuma haftasına başlamaya hazır mısın?' };
   }
+  if (gecenHafta === 0) {
+    return { emoji: '🚀', metin: `Bu hafta ${buHafta} sayfa okudun — harika bir başlangıç!` };
+  }
+
+  const fark = Math.round(((buHafta - gecenHafta) / gecenHafta) * 100);
+
+  if (fark > 10) return { emoji: '📈', metin: `Bu hafta geçen haftaya göre %${fark} daha çok okudun. Süpersin!` };
+  if (fark >= -10) return { emoji: '⭐', metin: 'İstikrarlı gidiyorsun, böyle devam et!' };
+  return { emoji: '💪', metin: 'Bu hafta biraz yavaşladın ama her sayfa değerli, hadi devam edelim!' };
+}
+
+// ------------------------------------------------------------
+// HAYVAN SESLERİ (Web Audio API ile sentezlenir — dosya indirmez,
+// tamamen offline çalışır, telif hakkı sorunu yaratmaz)
+// ------------------------------------------------------------
+let sesBaglami = null;
+
+function sesBaglaminiAl() {
+  if (!sesBaglami) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) {
+      try { sesBaglami = new AC(); } catch (e) { sesBaglami = null; }
+    }
+  }
+  if (sesBaglami && sesBaglami.state === 'suspended') {
+    sesBaglami.resume().catch(() => {});
+  }
+  return sesBaglami;
+}
+
+// Tarayıcılar, kullanıcı hiç dokunmadan otomatik ses çalınmasını engeller.
+// Bazı sesler (örn. yeni evrim kutlaması) doğrudan bir tıklamadan değil,
+// ekran güncellenirken kendiliğinden tetiklenebiliyor — özellikle sayfa zaten
+// girişliyken yeniden açıldığında. Bunu önlemek için sayfadaki ilk dokunuşta/
+// tıklamada ses altyapısının kilidini erkenden açıyoruz.
+document.addEventListener('pointerdown', sesBaglaminiAl, { capture: true });
+document.addEventListener('keydown', sesBaglaminiAl, { capture: true });
+
+function tonCal(frekans, sure, tur = 'sine', gecikme = 0, sesSeviyesi = 0.2) {
+  const ctx = sesBaglaminiAl();
+  if (!ctx) return;
+  try {
+    const osc = ctx.createOscillator();
+    const kazanc = ctx.createGain();
+    osc.type = tur;
+    osc.frequency.setValueAtTime(frekans, ctx.currentTime + gecikme);
+    kazanc.gain.setValueAtTime(0, ctx.currentTime + gecikme);
+    kazanc.gain.linearRampToValueAtTime(sesSeviyesi, ctx.currentTime + gecikme + 0.02);
+    kazanc.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + gecikme + sure);
+    osc.connect(kazanc).connect(ctx.destination);
+    osc.start(ctx.currentTime + gecikme);
+    osc.stop(ctx.currentTime + gecikme + sure + 0.03);
+  } catch (e) { /* sessizce yoksay */ }
+}
+
+function kaymaliTonCal(baslangic, bitis, sure, tur = 'sine', sesSeviyesi = 0.22, gecikme = 0) {
+  const ctx = sesBaglaminiAl();
+  if (!ctx) return;
+  try {
+    const osc = ctx.createOscillator();
+    const kazanc = ctx.createGain();
+    osc.type = tur;
+    osc.frequency.setValueAtTime(baslangic, ctx.currentTime + gecikme);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(bitis, 1), ctx.currentTime + gecikme + sure);
+    kazanc.gain.setValueAtTime(0, ctx.currentTime + gecikme);
+    kazanc.gain.linearRampToValueAtTime(sesSeviyesi, ctx.currentTime + gecikme + 0.03);
+    kazanc.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + gecikme + sure);
+    osc.connect(kazanc).connect(ctx.destination);
+    osc.start(ctx.currentTime + gecikme);
+    osc.stop(ctx.currentTime + gecikme + sure + 0.03);
+  } catch (e) { /* sessizce yoksay */ }
+}
+
+const HAYVAN_SESLERI = {
+  kedi: (asama) => {
+    const carpan = 1 + asama * 0.18;
+    tonCal(500 * carpan, 0.12, 'sine', 0, 0.2);
+    tonCal(660 * carpan, 0.18, 'sine', 0.12, 0.2);
+  },
+  kertenkele: (asama) => {
+    const derinlik = 150 - asama * 25;
+    kaymaliTonCal(derinlik, derinlik * 0.55, 0.55 + asama * 0.15, 'sawtooth', 0.22);
+    if (asama >= 2) tonCal(950, 0.12, 'square', 0.35, 0.12);
+  },
+  kurt: (asama) => {
+    const tepe = 300 + asama * 45;
+    kaymaliTonCal(tepe * 0.55, tepe, 0.2, 'sine', 0.18);
+    kaymaliTonCal(tepe, tepe * 0.45, 0.65 + asama * 0.1, 'sine', 0.2, 0.2);
+  },
+  kus: (asama) => {
+    const taban = 900 + asama * 110;
+    tonCal(taban, 0.08, 'triangle', 0, 0.18);
+    tonCal(taban * 1.2, 0.08, 'triangle', 0.09, 0.18);
+    tonCal(taban * 1.4, 0.1, 'triangle', 0.18, 0.18);
+  },
+  balik: (asama) => {
+    for (let i = 0; i < 3; i++) tonCal(700 + Math.random() * 300 + asama * 60, 0.08, 'sine', i * 0.09, 0.15);
+  },
+};
+
+function hayvanSesiCal(tur, asama) {
+  const fn = HAYVAN_SESLERI[tur];
+  if (fn) fn(Math.max(0, Number(asama) || 0));
+}
+
+// ------------------------------------------------------------
+// BAŞLATMA / GİRİŞ
+// ------------------------------------------------------------
+window.onload = function () {
+  if (localStorage.getItem("girisYapildi") === "true" && aktifKullanici && KULLANICILAR[aktifKullanici]) {
+    verileriYukle();
+    girisGoster(false);
+    aktifKullaniciEtiketiniGuncelle();
+  } else {
+    girisGoster(true);
+  }
+
+  if (localStorage.getItem("tema") === "dark") {
+    document.body.classList.add("dark");
+    const t = document.getElementById("temaBtn");
+    if (t) t.innerText = "☀️ Aydınlık Mod";
+  }
+
+  bugununTarihiniAyarla();
+  tumunuGuncelle();
+};
+
+function girisGoster(goster) {
+  document.getElementById("girisEkrani").style.display = goster ? "flex" : "none";
+  document.getElementById("uygulama").style.display = goster ? "none" : "block";
+}
+
+function aktifKullaniciEtiketiniGuncelle() {
+  const etiket = document.getElementById('aktifKullaniciEtiketi');
+  if (etiket) etiket.innerText = aktifKullanici ? `👤 ${aktifKullanici}` : '';
+}
+
+function bugununTarihiniAyarla() {
+  const t = document.getElementById('tarih');
+  if (t && !t.value) t.value = bugunYYYYMMDD();
+}
+
+const girisBtn = document.getElementById("girisBtn");
+if (girisBtn) {
+  girisBtn.addEventListener("click", function () {
+    const girilenAd = document.getElementById("kullaniciAdi").value.trim().toUpperCase();
+    const sifre = document.getElementById("sifre").value.trim();
+    const hesap = KULLANICILAR[girilenAd];
+
+    if (hesap && hesap.sifre === sifre) {
+      aktifKullanici = girilenAd;
+      localStorage.setItem("aktifKullanici", aktifKullanici);
+      localStorage.setItem("girisYapildi", "true");
+      document.getElementById("hata").innerText = "";
+      verileriYukle();
+      girisGoster(false);
+      aktifKullaniciEtiketiniGuncelle();
+      tumunuGuncelle();
+    } else {
+      document.getElementById("hata").innerText = "Kullanıcı adı veya şifre yanlış!";
+    }
+  });
+}
+
+['kullaniciAdi', 'sifre'].forEach((id, i, arr) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    if (i < arr.length - 1) document.getElementById(arr[i + 1]).focus();
+    else girisBtn.click();
+  });
 });
 
-/* ============================= BULUT SENKRON (JSONBin.io) ============================= */
-const CLOUD_CONFIG_KEY = "portfoyCloudConfig_v1";
-let cloudSyncing = false;
-let cloudLastSync = null;
-
-function getCloudConfig(){
-  try{
-    const raw = localStorage.getItem(CLOUD_CONFIG_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch(e){ return null; }
-}
-function setCloudConfig(cfg){
-  try{ localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cfg)); } catch(e){}
-}
-function clearCloudConfig(){
-  try{ localStorage.removeItem(CLOUD_CONFIG_KEY); } catch(e){}
-}
-
-async function jsonbinRequest(url, options){
-  const res = await fetch(url, options);
-  if(!res.ok) throw new Error("JSONBin isteği başarısız: " + res.status);
-  return res.json();
-}
-
-async function createCloudBin(apiKey){
-  const data = await jsonbinRequest("https://api.jsonbin.io/v3/b", {
-    method:"POST",
-    headers:{ "Content-Type":"application/json", "X-Master-Key":apiKey, "X-Bin-Private":"true", "X-Bin-Name":"Portfoy Takip" },
-    body: JSON.stringify(buildPayload()),
+const cikisBtn = document.getElementById("cikisBtn");
+if (cikisBtn) {
+  cikisBtn.addEventListener("click", function () {
+    if (confirm("Çıkış yapmak istiyor musunuz?")) {
+      localStorage.removeItem("girisYapildi");
+      girisGoster(true);
+      document.getElementById("sifre").value = '';
+      document.getElementById("kullaniciAdi").value = '';
+      const etiket = document.getElementById('aktifKullaniciEtiketi');
+      if (etiket) etiket.innerText = '';
+    }
   });
-  return data.metadata.id;
 }
 
-async function pushToCloud(){
-  const cfg = getCloudConfig();
-  if(!cfg || !cfg.apiKey || !cfg.binId) return;
-  cloudSyncing = true; updateCloudStatus();
-  try{
-    await jsonbinRequest(`https://api.jsonbin.io/v3/b/${cfg.binId}`, {
-      method:"PUT",
-      headers:{ "Content-Type":"application/json", "X-Master-Key":cfg.apiKey },
-      body: JSON.stringify(buildPayload()),
-    });
-    cloudLastSync = new Date();
-  } catch(e){ console.warn("Buluta kaydedilemedi:", e.message); }
-  cloudSyncing = false; updateCloudStatus();
+const temaBtn = document.getElementById("temaBtn");
+if (temaBtn) {
+  temaBtn.addEventListener("click", function () {
+    document.body.classList.toggle("dark");
+    if (document.body.classList.contains("dark")) {
+      localStorage.setItem("tema", "dark");
+      temaBtn.innerText = "☀️ Aydınlık Mod";
+    } else {
+      localStorage.setItem("tema", "light");
+      temaBtn.innerText = "🌙 Karanlık Mod";
+    }
+  });
 }
 
-async function pullFromCloud(silent){
-  const cfg = getCloudConfig();
-  if(!cfg || !cfg.apiKey || !cfg.binId) return false;
-  cloudSyncing = true; updateCloudStatus();
-  try{
-    const data = await jsonbinRequest(`https://api.jsonbin.io/v3/b/${cfg.binId}/latest`, {
-      headers:{ "X-Master-Key":cfg.apiKey },
-    });
-    applyPayload(data.record);
-    cloudLastSync = new Date();
-    cloudSyncing = false; updateCloudStatus();
-    return true;
-  } catch(e){
-    cloudSyncing = false; updateCloudStatus();
-    if(!silent) alert("Buluttan veri çekilemedi — API anahtarı/Bin ID doğru mu, internet bağlantınız var mı kontrol edin.");
-    return false;
+// ------------------------------------------------------------
+// KİŞİ YÖNETİMİ
+// ------------------------------------------------------------
+const kisiEkleBtn = document.getElementById('kisiEkleBtn');
+if (kisiEkleBtn) kisiEkleBtn.addEventListener('click', kisiEkle);
+
+const yeniKisiInput = document.getElementById('yeniKisi');
+if (yeniKisiInput) {
+  yeniKisiInput.addEventListener('keydown', e => { if (e.key === 'Enter') kisiEkle(); });
+}
+
+function kisiEkle() {
+  const input = document.getElementById('yeniKisi');
+  const ad = input.value.trim();
+
+  if (ad === '') { alert('Kişi adı giriniz.'); return; }
+  if (kisiler.some(k => k.trim().toLocaleLowerCase('tr') === ad.toLocaleLowerCase('tr'))) {
+    alert('Bu kişi zaten kayıtlı.');
+    return;
+  }
+
+  kisiler.push(ad);
+  kaydetVeri();
+  input.value = '';
+  tumunuGuncelle();
+}
+
+function kisiSil(isim) {
+  if (!confirm(`"${isim}" ve tüm okuma kayıtları silinsin mi? Bu işlem geri alınamaz.`)) return;
+  kisiler = kisiler.filter(k => k !== isim);
+  kayitlar = kayitlar.filter(k => k.kisi !== isim);
+  delete evcilHayvanlar[isim];
+  delete evrimGosterildi[isim];
+  kaydetVeri();
+  kaydetEvcilHayvanlar();
+  kaydetEvrimGosterildi();
+  tumunuGuncelle();
+}
+
+function kisiListesiniGuncelle() {
+  const select = document.getElementById('kisi');
+  const liste = document.getElementById('kisiListesi');
+
+  if (select) {
+    const secili = select.value;
+    select.innerHTML = kisiler.map(ad => `<option value="${escapeHtml(ad)}">${escapeHtml(ad)}</option>`).join('');
+    if (kisiler.includes(secili)) select.value = secili;
+  }
+  if (liste) {
+    liste.innerHTML = kisiler.map(ad => `<option value="${escapeHtml(ad)}">${escapeHtml(ad)}</option>`).join('');
   }
 }
 
-function updateCloudStatus(){
-  const el = document.getElementById("cloudStatus");
-  if(!el) return;
-  const cfg = getCloudConfig();
-  if(!cfg || !cfg.apiKey || !cfg.binId){ el.textContent = "Bulut senkron kapalı"; return; }
-  if(cloudSyncing){ el.textContent = "Senkronize ediliyor…"; return; }
-  el.textContent = cloudLastSync ? `Son senkron: ${cloudLastSync.toLocaleTimeString("tr-TR")}` : "Bağlı — henüz senkron olmadı";
-}
+// ------------------------------------------------------------
+// İSTATİSTİK HESAPLAMA (kaynak: kayıtlar, tek yerden hesaplanır)
+// ------------------------------------------------------------
+function kisiIstatistikleri(isim) {
+  const kayitlarim = kayitlar.filter(k => k.kisi === isim);
+  const toplamSayfa = kayitlarim.reduce((t, k) => t + Number(k.okunanSayfa || 0), 0);
 
-function toggleCloudPanel(){
-  const el = document.getElementById("cloudPanel");
-  el.style.display = el.style.display === "none" ? "block" : "none";
-  if(el.style.display === "block") renderCloudPanel();
-}
-
-function renderCloudPanel(){
-  const el = document.getElementById("cloudPanel");
-  const cfg = getCloudConfig() || {apiKey:"", binId:""};
-  el.innerHTML = `
-    <div class="drawer open" style="max-width:520px;">
-      <h3>☁ Bulut Senkron Ayarları (JSONBin.io)</h3>
-      <p style="font-size:12.5px; color:var(--text-soft); margin-top:-6px;">
-        jsonbin.io adresinden ücretsiz hesap açıp "X-Master-Key" alın. Aynı API Key ve Bin ID'yi tüm cihazlarınıza girerseniz
-        veriler otomatik senkronize olur.
-      </p>
-      <div class="field-grid">
-        <div class="field"><label>API Key (X-Master-Key)</label><input id="cfgApiKey" type="text" value="${cfg.apiKey||""}"></div>
-        <div class="field"><label>Bin ID (varsa)</label><input id="cfgBinId" type="text" value="${cfg.binId||""}"></div>
-      </div>
-      <div class="drawer-actions" style="flex-wrap:wrap;">
-        <button class="btn btn-accent" id="btnCreateBin">Yeni Bin Oluştur</button>
-        <button class="btn" id="btnConnect">Kaydet ve Buluttan Yükle</button>
-        <button class="btn" id="btnPushNow">Şimdi Buluta Gönder</button>
-        <button class="btn btn-danger" id="btnDisconnect">Bağlantıyı Kaldır</button>
-      </div>
-      <div id="cloudStatus" style="margin-top:10px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-soft);"></div>
-    </div>
-  `;
-  updateCloudStatus();
-
-  document.getElementById("btnCreateBin").onclick = async () => {
-    const apiKey = document.getElementById("cfgApiKey").value.trim();
-    if(!apiKey){ alert("Önce API Key girin."); return; }
-    try{
-      const binId = await createCloudBin(apiKey);
-      setCloudConfig({apiKey, binId});
-      alert("Yeni bin oluşturuldu. Bin ID: " + binId + "\nBu ID'yi diğer cihazlarınıza da girin.");
-      renderCloudPanel();
-    } catch(e){ alert("Bin oluşturulamadı: " + e.message); }
-  };
-  document.getElementById("btnConnect").onclick = async () => {
-    const apiKey = document.getElementById("cfgApiKey").value.trim();
-    const binId = document.getElementById("cfgBinId").value.trim();
-    if(!apiKey || !binId){ alert("API Key ve Bin ID girin."); return; }
-    setCloudConfig({apiKey, binId});
-    const ok = await pullFromCloud();
-    if(ok){ renderMain(); renderCloudPanel(); }
-  };
-  document.getElementById("btnPushNow").onclick = () => pushToCloud();
-  document.getElementById("btnDisconnect").onclick = () => {
-    if(!confirm("Bulut bağlantısı kaldırılsın mı? (Bulutdaki veri silinmez, sadece bu cihazın bağlantısı kesilir.)")) return;
-    clearCloudConfig();
-    renderCloudPanel();
-  };
-}
-
-/* ============================= HESAPLAMALAR ============================= */
-function lookupHistoricalPrice(history, kod, daysAgo){
-  const target = new Date();
-  target.setHours(0,0,0,0);
-  target.setDate(target.getDate()-daysAgo);
-  let best = null, bestDate = null;
-  history.forEach(h => {
-    if(h.kod !== kod) return;
-    const d = new Date(h.tarih);
-    d.setHours(0,0,0,0);
-    if(d.getTime() <= target.getTime() && (!bestDate || d.getTime() > bestDate.getTime())){
-      best = h.fiyat; bestDate = d;
+  const kitaplarMap = {};
+  kayitlarim.forEach(k => {
+    const anahtar = k.kitap;
+    if (!kitaplarMap[anahtar]) {
+      kitaplarMap[anahtar] = { kitap: k.kitap, yazar: k.yazar, toplamSayfa: 0, okunan: 0, sonTarih: k.tarih || '' };
     }
+    kitaplarMap[anahtar].toplamSayfa = Math.max(kitaplarMap[anahtar].toplamSayfa, Number(k.toplamSayfa || 0));
+    kitaplarMap[anahtar].okunan += Number(k.okunanSayfa || 0);
+    if ((k.tarih || '') > kitaplarMap[anahtar].sonTarih) kitaplarMap[anahtar].sonTarih = k.tarih;
+    if (!kitaplarMap[anahtar].yazar && k.yazar) kitaplarMap[anahtar].yazar = k.yazar;
   });
-  return best;
-}
-function pctChange(current, past){
-  if(past===null||past===undefined||past===0||current===null||current===undefined||isNaN(current)) return null;
-  return (current-past)/past;
-}
-function computed(row, key){
-  const history = PORTFOLIOS[key].history || [];
-  const dunku = lookupHistoricalPrice(history, row.kod, 1);
-  const hafta = lookupHistoricalPrice(history, row.kod, 7);
-  const yil = lookupHistoricalPrice(history, row.kod, 365);
-  const ucYil = lookupHistoricalPrice(history, row.kod, 1095);
-  const gunluk = pctChange(row.guncel, dunku);
-  const haftalik = pctChange(row.guncel, hafta);
-  const yillik = pctChange(row.guncel, yil);
-  const ucYillik = pctChange(row.guncel, ucYil);
-  const maliyet = row.adet*row.alis;
-  const guncelDeger = row.adet*row.guncel;
-  const karZarar = guncelDeger-maliyet;
-  const karZararPct = safeDiv(karZarar, maliyet);
-  return {gunluk,haftalik,yillik,ucYillik,maliyet,guncelDeger,karZarar,karZararPct};
-}
-function safeDiv(a,b){ return b ? a/b : null; }
 
-function portfolioTotals(key){
-  const p = PORTFOLIOS[key];
-  let maliyet=0, guncelDeger=0;
-  p.rows.forEach(r => { const c = computed(r,key); maliyet+=c.maliyet; guncelDeger+=c.guncelDeger; });
-  const karZarar = guncelDeger-maliyet;
-  const karZararPct = safeDiv(karZarar, maliyet);
-  return {maliyet, guncelDeger, karZarar, karZararPct};
+  const kitaplar = Object.values(kitaplarMap);
+  const tamamlanan = kitaplar.filter(kt => kt.toplamSayfa > 0 && kt.okunan >= kt.toplamSayfa);
+  const devamEden = kitaplar.filter(kt => !(kt.toplamSayfa > 0 && kt.okunan >= kt.toplamSayfa));
+  const gunSayisi = new Set(kayitlarim.map(k => k.tarih).filter(Boolean)).size;
+
+  return { toplamSayfa, kitaplar, tamamlanan, devamEden, gunSayisi };
 }
 
-/* ============================= FORMAT ============================= */
-function fmtMoney(val, cur){
-  if(val===null||val===undefined||isNaN(val)) return "—";
-  const sign = val>0?"+":val<0?"-":"";
-  return `${sign}${Math.abs(val).toLocaleString("tr-TR",{minimumFractionDigits:2,maximumFractionDigits:2})} ${cur}`;
-}
-function fmtMoneyPlain(val, cur){
-  if(val===null||val===undefined||isNaN(val)) return "—";
-  return `${val.toLocaleString("tr-TR",{minimumFractionDigits:2,maximumFractionDigits:2})} ${cur}`;
-}
-function fmtPct(val){
-  if(val===null||val===undefined||isNaN(val)) return "—";
-  const sign = val>0?"+":val<0?"-":"";
-  return `${sign}${Math.abs(val*100).toFixed(1)}%`;
-}
-function pctClass(val){ if(val===null||val===undefined||isNaN(val)) return ""; return val>0?"pos":val<0?"neg":""; }
-
-/* ============================= TICKER ============================= */
-function renderTicker(){
-  const el = document.getElementById("tickerTape");
-  let items = [];
-  Object.entries(PORTFOLIOS).forEach(([key,p]) => {
-    p.rows.forEach(r => {
-      const c = computed(r,key);
-      items.push(`<span class="tick-item ${pctClass(c.gunluk)==='pos'?'up':pctClass(c.gunluk)==='neg'?'down':''}"><b>${r.kod}</b>${fmtPct(c.gunluk)}</span>`);
-    });
-  });
-  el.innerHTML = items.join("") + items.join(""); // duplicate for seamless loop
-  const bugun = new Date().toLocaleDateString("tr-TR", {day:"2-digit", month:"long", year:"numeric", weekday:"long"});
-  document.getElementById("headerMeta").innerHTML = `${bugun}<br>Toplam ${Object.values(PORTFOLIOS).reduce((s,p)=>s+p.rows.length,0)} kayıt · USD/TRY: ${usdTry.toFixed(2)}`;
-}
-
-/* ============================= TABS ============================= */
-function renderTabs(){
-  const nav = document.getElementById("tabs");
-  nav.innerHTML = "";
-  const labels = {bist:"BIST Portföy", abd:"ABD Portföy", fon:"Fon Portföy", kripto:"Kripto Portföy", overview:"Genel Bakış", macro:"Makroekonomik Veriler"};
-  TAB_ORDER.forEach(key => {
-    const btn = document.createElement("button");
-    btn.textContent = labels[key];
-    btn.className = key===activeTab?"active":"";
-    btn.style.setProperty("--accent", getTabAccent(key));
-    btn.onclick = () => { activeTab = key; renderMain(); };
-    nav.appendChild(btn);
-  });
-}
-function getTabAccent(key){
-  if(key==="overview") return "#e7ebee";
-  if(key==="macro") return "#c2703a";
-  return PORTFOLIOS[key].accent;
-}
-
-/* ============================= MAIN RENDER ============================= */
-function renderMain(){
-  renderTabs();
-  const main = document.getElementById("main");
-  main.innerHTML = "";
-  if(activeTab === "overview"){ main.appendChild(renderOverview()); }
-  else if(activeTab === "macro"){ main.appendChild(renderMacroPanel()); }
-  else { main.appendChild(renderPortfolioPanel(activeTab)); }
-  renderTicker();
-}
-
-/* ============================= PORTFOLIO PANEL ============================= */
-function renderPortfolioPanel(key){
-  const p = PORTFOLIOS[key];
-  const totals = portfolioTotals(key);
-  const panel = document.createElement("div");
-  panel.className = "panel active";
-  panel.style.setProperty("--accent", p.accent);
-
-  // ---- summary cards ----
-  const cards = document.createElement("div");
-  cards.className = "cards";
-  cards.innerHTML = `
-    <div class="card"><div class="label">Toplam Maliyet</div><div class="value">${fmtMoneyPlain(totals.maliyet,p.currency)}</div></div>
-    <div class="card"><div class="label">Güncel Değer</div><div class="value">${fmtMoneyPlain(totals.guncelDeger,p.currency)}</div></div>
-    <div class="card"><div class="label">Kar / Zarar</div><div class="value ${pctClass(totals.karZarar)}">${fmtMoney(totals.karZarar,p.currency)}</div><div class="sub ${pctClass(totals.karZararPct)}">${fmtPct(totals.karZararPct)}</div></div>
-    <div class="card"><div class="label">Kayıt Sayısı</div><div class="value">${p.rows.length}</div><div class="sub">${p.idLabel}</div></div>
-  `;
-  panel.appendChild(cards);
-
-  // ---- toolbar ----
-  const toolbar = document.createElement("div");
-  toolbar.className = "toolbar";
-  const left = document.createElement("div");
-  left.className = "toolbar-left";
-  const search = document.createElement("input");
-  search.className="search"; search.placeholder="Kod ara…"; search.value = searchTerm[key];
-  search.oninput = e => { searchTerm[key]=e.target.value; renderMain(); };
-  const exportBtn = document.createElement("button");
-  exportBtn.className="btn"; exportBtn.textContent="⭳ CSV indir";
-  exportBtn.onclick = () => exportCSV(key);
-  const clearHistBtn = document.createElement("button");
-  clearHistBtn.className="btn"; clearHistBtn.textContent="🧹 Fiyat Geçmişini Sıfırla";
-  clearHistBtn.title = "Yanlış/eski görünen değişim yüzdelerini düzeltmek için bu portföydeki TÜM hisselerin fiyat geçmişini temizler";
-  clearHistBtn.onclick = () => {
-    if(!confirm("Bu portföydeki TÜM hisselerin fiyat geçmişi silinecek (Günlük/Haftalık/Yıllık/3 Yıllık % değerleri sıfırlanacak). Silinen/yeniden eklenen hisselerde görülen yanlış yüzdeleri düzeltmek için kullanılır. Emin misiniz?")) return;
-    PORTFOLIOS[key].history = [];
-    saveState();
-    renderMain();
-  };
-  left.appendChild(search); left.appendChild(exportBtn); left.appendChild(clearHistBtn);
-  const addBtn = document.createElement("button");
-  addBtn.className="btn btn-accent"; addBtn.textContent="+ Yeni "+ (key==="fon"?"Fon":key==="kripto"?"Kripto":"Hisse");
-  addBtn.onclick = () => { editingId[key]="new"; renderMain(); };
-  toolbar.appendChild(left); toolbar.appendChild(addBtn);
-  panel.appendChild(toolbar);
-
-  // ---- table ----
-  panel.appendChild(renderTable(key));
-
-  // ---- drawer ----
-  if(editingId[key]!==null){ panel.appendChild(renderDrawer(key, editingId[key])); }
-  if(historyEditor && historyEditor.key===key){ panel.appendChild(renderHistoryDrawer(key, historyEditor.rowId)); }
-
-  // ---- charts ----
-  panel.appendChild(renderChartsSection(key));
-
-  return panel;
-}
-
-const COLS = [
-  {key:"kod", label:"Kod"}, {key:"adet", label:"Adet"}, {key:"alis", label:"Alış Fiy."},
-  {key:"alisTarihi", label:"Alış Tar."}, {key:"guncel", label:"Güncel Fiy."},
-  {key:"gunluk", label:"Günlük %", derived:true}, {key:"haftalik", label:"Haftalık %", derived:true},
-  {key:"yillik", label:"Yıllık %", derived:true}, {key:"ucYillik", label:"3 Yıllık %", derived:true},
-  {key:"maliyet", label:"Maliyet", derived:true}, {key:"guncelDeger", label:"Güncel Değer", derived:true},
-  {key:"karZarar", label:"Kar/Zarar", derived:true}, {key:"karZararPct", label:"Kar/Zarar %", derived:true},
+const KILOMETRE_TASLARI = [
+  { sinir: 0,    ad: 'Fırlatma Rampası',  emoji: '🚀' },
+  { sinir: 100,  ad: 'Ay Kaşifi',         emoji: '🌙' },
+  { sinir: 500,  ad: 'Mars Gezgini',      emoji: '🔴' },
+  { sinir: 1000, ad: 'Jüpiter Kaşifi',    emoji: '🪐' },
+  { sinir: 2500, ad: 'Galaksi Efsanesi',  emoji: '☀️' },
 ];
+const UCUS_TAVANI = 2500;
 
-function renderTable(key){
-  const p = PORTFOLIOS[key];
-  const wrap = document.createElement("div");
-  wrap.className = "table-wrap";
-  const table = document.createElement("table");
+function rozetBul(sayfa) {
+  let sonuc = KILOMETRE_TASLARI[0];
+  KILOMETRE_TASLARI.forEach(k => { if (sayfa >= k.sinir) sonuc = k; });
+  return { ad: sonuc.ad, emoji: sonuc.emoji };
+}
 
-  const thead = document.createElement("thead");
-  const trh = document.createElement("tr");
-  COLS.forEach(c => {
-    const th = document.createElement("th");
-    th.textContent = c.label;
-    if(sortState[key].col===c.key){ th.classList.add("sorted"); if(sortState[key].dir===-1) th.classList.add("asc"); }
-    th.onclick = () => { toggleSort(key,c.key); };
-    trh.appendChild(th);
-  });
-  const thAct = document.createElement("th"); thAct.textContent="İşlem"; thAct.style.cursor="default";
-  trh.appendChild(thAct);
-  thead.appendChild(trh);
-  table.appendChild(thead);
+// ------------------------------------------------------------
+// KİŞİ KARTLARI — "Uçuş Paneli": her okuyucu bir roket, okunan
+// sayfa arttıkça roket gezegenlere doğru yükselir.
+// ------------------------------------------------------------
+function kisiKartlariniOlustur() {
+  const alan = document.getElementById('kisiKartlari');
+  if (!alan) return;
 
-  const tbody = document.createElement("tbody");
-  let enriched = p.rows.map(r => ({row:r, c: computed(r,key)}));
-  // best/worst by günlük %
-  let bestId=null, worstId=null;
-  if(enriched.length){
-    const withVal = enriched.filter(e=>e.c.gunluk!==null);
-    if(withVal.length){
-      bestId = withVal.reduce((a,b)=>b.c.gunluk>a.c.gunluk?b:a).row.id;
-      worstId = withVal.reduce((a,b)=>b.c.gunluk<a.c.gunluk?b:a).row.id;
+  if (kisiler.length === 0) {
+    alan.innerHTML = `<div class="bosDurum">🚀 Henüz kaşif eklenmedi. Aşağıdan yeni bir okuyucu ekleyerek uzay yolculuğuna başlayın!</div>`;
+    return;
+  }
+
+  alan.innerHTML = kisiler.map(isim => {
+    const ist = kisiIstatistikleri(isim);
+    const rozet = rozetBul(ist.toplamSayfa);
+    const roketKonumu = Math.max(3, Math.min(97, (ist.toplamSayfa / UCUS_TAVANI) * 100));
+
+    const gezegenler = KILOMETRE_TASLARI.map(k => {
+      const konum = Math.min(97, (k.sinir / UCUS_TAVANI) * 100);
+      const aktif = ist.toplamSayfa >= k.sinir;
+      return `<div class="gezegen ${aktif ? 'gezegenAktif' : ''}" style="bottom:${konum}%" title="${escapeHtml(k.ad)} — ${k.sinir} sayfa">${k.emoji}</div>`;
+    }).join('');
+
+    const yildizlar = ist.tamamlanan.map(kt =>
+      `<span class="yildizRozeti" title="${escapeHtml(kt.kitap)} — ${escapeHtml(kt.yazar || 'Yazar bilinmiyor')}">⭐</span>`
+    ).join('');
+
+    // Kupa Dolabı — her KUPA_ARALIGI tamamlanan kitapta bir kupa
+    const tamamlananSayisi = ist.tamamlanan.length;
+    const kupaAdedi = Math.floor(tamamlananSayisi / KUPA_ARALIGI);
+    const kupaGosterim = kupaAdedi > 0
+      ? Array(Math.min(kupaAdedi, 8)).fill('🏆').join('') + (kupaAdedi > 8 ? ` +${kupaAdedi - 8}` : '')
+      : '';
+    const kupayaKalan = KUPA_ARALIGI - (tamamlananSayisi % KUPA_ARALIGI);
+
+    // Büyülü Dost — her EVRIM_ESIKLERI[i] tamamlanan kitapta bir evrim aşaması
+    const asama = evrimAsamasi(tamamlananSayisi);
+    let hayvanHtml;
+
+    if (asama < 0) {
+      const kalan = EVRIM_ESIKLERI[0] - tamamlananSayisi;
+      hayvanHtml = `<div class="hayvanKilit">🔒 ${kalan} kitap daha tamamlayınca büyülü bir dost kazanacaksın!</div>`;
+    } else if (!evcilHayvanlar[isim]) {
+      hayvanHtml = `
+        <div class="hayvanSecim">
+          <p>🎉 Büyülü bir dost kazandın! Birini seç (🔊 ile sesini dinleyebilirsin):</p>
+          <div class="hayvanSecenekleri">
+            ${Object.entries(HAYVAN_TURLERI).map(([key, tur]) => `
+              <div class="hayvanSecenek">
+                <button class="hayvanSecBtn" data-isim="${escapeHtml(isim)}" data-tur="${key}" title="${escapeHtml(tur.ad)} — seçmek için tıkla">${tur.asamalar[0].emoji}</button>
+                <button class="hayvanOnizlemeBtn" data-tur="${key}" data-asama="0" title="Sesini dinle">🔊</button>
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+    } else {
+      const tur = HAYVAN_TURLERI[evcilHayvanlar[isim]];
+      const mevcut = tur.asamalar[asama];
+      const sonrakiEsik = EVRIM_ESIKLERI[asama + 1];
+      const oncekiEsik = EVRIM_ESIKLERI[asama];
+      const efsaneMi = asama === EVRIM_ESIKLERI.length - 1;
+
+      // Yeni bir evrim aşamasına ilk kez ulaşıldığında kutlama sesi çal
+      if ((evrimGosterildi[isim] ?? -1) < asama) {
+        evrimGosterildi[isim] = asama;
+        kaydetEvrimGosterildi();
+        setTimeout(() => hayvanSesiCal(evcilHayvanlar[isim], asama), 300);
+      }
+
+      hayvanHtml = `
+        <div class="hayvanKart ${efsaneMi ? 'efsanevi' : ''}">
+          <div class="hayvanEmoji hayvanAsama${asama} tiklanabilir" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}" title="Dokun, dostunla oyna!">${mevcut.emoji}</div>
+          <div class="hayvanAd">${escapeHtml(mevcut.ad)}</div>
+          <button class="hayvanSesBtn" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}">🔊 Sesini Dinle</button>
+          ${sonrakiEsik !== undefined
+            ? `<div class="hayvanIlerleme"><div class="hayvanIlerlemeDolu" style="width:${Math.min(100, Math.round(((tamamlananSayisi - oncekiEsik) / (sonrakiEsik - oncekiEsik)) * 100))}%"></div></div>
+               <div class="hayvanAlt">Sonraki evrime ${sonrakiEsik - tamamlananSayisi} kitap kaldı</div>`
+            : `<div class="hayvanAlt">✨ En yüksek evrime ulaştı!</div>`}
+        </div>`;
     }
-  }
-  // filter
-  const term = searchTerm[key].toLocaleLowerCase("tr");
-  if(term) enriched = enriched.filter(e => e.row.kod.toLocaleLowerCase("tr").includes(term));
-  // sort
-  const {col,dir} = sortState[key];
-  if(col){
-    enriched.sort((a,b) => {
-      const va = col in a.row ? a.row[col] : a.c[col];
-      const vb = col in b.row ? b.row[col] : b.c[col];
-      if(typeof va === "string") return va.localeCompare(vb,"tr")*dir;
-      return ((va??-Infinity)-(vb??-Infinity))*dir;
-    });
-  }
 
-  if(enriched.length===0){
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="${COLS.length+1}">Kayıt bulunamadı.</td></tr>`;
+    const gelisim = gelisimMesajiOlustur(isim);
+
+    return `
+      <div class="kisiKart">
+        <div class="kisiKartUst">
+          <h2>${escapeHtml(isim)}</h2>
+          <button class="kisiSilBtn" data-isim="${escapeHtml(isim)}" title="Kaşifi Sil">✕</button>
+        </div>
+        <div class="rozet">${rozet.emoji} ${rozet.ad}</div>
+        <div class="gelisimMesaji">${gelisim.emoji} ${gelisim.metin}</div>
+
+        <div class="ucusPaneli">
+          <div class="ucusYolu">
+            ${gezegenler}
+            <div class="roket" style="bottom:${roketKonumu}%">🚀</div>
+          </div>
+        </div>
+
+        <div class="kisiIstatistik">
+          <div><strong>${ist.toplamSayfa}</strong><span>Sayfa</span></div>
+          <div><strong>${ist.tamamlanan.length}</strong><span>Kitap</span></div>
+          <div><strong>${ist.gunSayisi}</strong><span>Gün</span></div>
+        </div>
+
+        <div class="rafBaslik">⭐ Toplanan Yıldızlar</div>
+        <div class="yildizKutusu">${yildizlar || '<span class="rafBos">Henüz yıldız kazanılmadı</span>'}</div>
+
+        <div class="rafBaslik">🏆 Kupa Dolabı (${kupaAdedi})</div>
+        <div class="kupaKutusu">${kupaGosterim || `<span class="rafBos">İlk kupa için ${kupayaKalan} kitap daha!</span>`}</div>
+
+        <div class="rafBaslik">🐾 Büyülü Dostun</div>
+        ${hayvanHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+const kisiKartlariAlani = document.getElementById('kisiKartlari');
+if (kisiKartlariAlani) {
+  kisiKartlariAlani.addEventListener('click', e => {
+    const silBtn = e.target.closest('.kisiSilBtn');
+    const hayvanBtn = e.target.closest('.hayvanSecBtn');
+    const sesBtn = e.target.closest('.hayvanSesBtn');
+    const onizlemeBtn = e.target.closest('.hayvanOnizlemeBtn');
+    const hayvanEmoji = e.target.closest('.hayvanEmoji');
+
+    if (silBtn) kisiSil(silBtn.dataset.isim);
+    if (hayvanBtn) evcilHayvanSec(hayvanBtn.dataset.isim, hayvanBtn.dataset.tur);
+    if (sesBtn) hayvanSesiCal(sesBtn.dataset.tur, sesBtn.dataset.asama);
+    if (onizlemeBtn) hayvanSesiCal(onizlemeBtn.dataset.tur, onizlemeBtn.dataset.asama);
+
+    if (hayvanEmoji) {
+      hayvanSesiCal(hayvanEmoji.dataset.tur, hayvanEmoji.dataset.asama);
+      hayvanEmoji.classList.remove('sevinc');
+      // Yeniden başlatmak için bir sonraki karede tekrar ekle (aynı animasyon üst üste tetiklenebilsin diye)
+      void hayvanEmoji.offsetWidth;
+      hayvanEmoji.classList.add('sevinc');
+      hayvanEmoji.addEventListener('animationend', function temizle(ev) {
+        if (ev.animationName === 'hayvanSevinc') {
+          hayvanEmoji.classList.remove('sevinc');
+          hayvanEmoji.removeEventListener('animationend', temizle);
+        }
+      });
+    }
+  });
+}
+
+// ------------------------------------------------------------
+// GENEL İSTATİSTİKLER
+// ------------------------------------------------------------
+function genelIstatistikleriGuncelle() {
+  const toplamSayfa = kayitlar.reduce((t, k) => t + Number(k.okunanSayfa || 0), 0);
+  let toplamKitap = 0;
+  let lider = '-';
+  let enYuksek = -1;
+
+  kisiler.forEach(isim => {
+    const ist = kisiIstatistikleri(isim);
+    toplamKitap += ist.tamamlanan.length;
+    if (ist.toplamSayfa > enYuksek) {
+      enYuksek = ist.toplamSayfa;
+      lider = isim;
+    }
+  });
+
+  document.getElementById('toplamSayfaGenel').innerText = toplamSayfa;
+  document.getElementById('toplamKitapGenel').innerText = toplamKitap;
+  document.getElementById('lider').innerText = kisiler.length ? lider : '-';
+}
+
+// ------------------------------------------------------------
+// KAYDET / SİL / DÜZENLE
+// ------------------------------------------------------------
+const kaydetBtn = document.getElementById('kaydetBtn');
+if (kaydetBtn) kaydetBtn.addEventListener('click', kaydet);
+
+const iptalBtn = document.getElementById('iptalBtn');
+if (iptalBtn) iptalBtn.addEventListener('click', duzenlemeyiIptalEt);
+
+function kaydet() {
+  const kisi = document.getElementById('kisi').value;
+  const tarih = document.getElementById('tarih').value;
+  const kitap = document.getElementById('kitapAdi').value.trim();
+  const yazar = document.getElementById('yazar').value.trim();
+  const toplamSayfa = Number(document.getElementById('toplamSayfa').value) || 0;
+  const okunanSayfa = Number(document.getElementById('okunanSayfa').value) || 0;
+  const dosyaInput = document.getElementById('kayitDosya');
+
+  if (kisiler.length === 0) { alert('Önce bir okuyucu ekleyin.'); return; }
+  if (kisi === '') { alert('Lütfen kişi seçiniz.'); return; }
+  if (kitap === '') { alert('Kitap adı giriniz.'); return; }
+  if (okunanSayfa <= 0) { alert('Okunan sayfa 0’dan büyük olmalıdır.'); return; }
+
+  const tamamla = (dosya) => {
+    const yeniKayit = { kisi, tarih, kitap, yazar, toplamSayfa, okunanSayfa };
+
+    if (duzenlenenIndex >= 0) {
+      if (!dosya && kayitlar[duzenlenenIndex] && kayitlar[duzenlenenIndex].dosya) {
+        yeniKayit.dosya = kayitlar[duzenlenenIndex].dosya;
+      } else if (dosya) {
+        yeniKayit.dosya = dosya;
+      }
+      kayitlar[duzenlenenIndex] = yeniKayit;
+      duzenlenenIndex = -1;
+      kaydetBtn.innerText = '💾 Kaydı Ekle';
+      if (iptalBtn) iptalBtn.style.display = 'none';
+    } else {
+      if (dosya) yeniKayit.dosya = dosya;
+      kayitlar.push(yeniKayit);
+    }
+
+    kaydetVeri();
+    formuTemizle();
+    tumunuGuncelle();
+  };
+
+  if (dosyaInput && dosyaInput.files && dosyaInput.files[0]) {
+    dosyaOku(dosyaInput.files[0], (dosya) => tamamla(dosya));
   } else {
-    enriched.forEach(({row,c}) => {
-      const tr = document.createElement("tr");
-      let badge = "";
-      if(row.id===bestId && enriched.length>1) badge = `<span class="badge badge-best">En iyi</span>`;
-      if(row.id===worstId && enriched.length>1 && worstId!==bestId) badge = `<span class="badge badge-worst">En kötü</span>`;
-      tr.innerHTML = `
-        <td><span class="kod-pill">${row.kod}</span>${badge}</td>
-        <td>${row.adet.toLocaleString("tr-TR")}</td>
-        <td>${fmtMoneyPlain(row.alis,p.currency)}</td>
-        <td>${row.alisTarihi}</td>
-        <td>${fmtMoneyPlain(row.guncel,p.currency)}</td>
-        <td class="${pctClass(c.gunluk)}">${fmtPct(c.gunluk)}</td>
-        <td class="${pctClass(c.haftalik)}">${fmtPct(c.haftalik)}</td>
-        <td class="${pctClass(c.yillik)}">${fmtPct(c.yillik)}</td>
-        <td class="${pctClass(c.ucYillik)}">${fmtPct(c.ucYillik)}</td>
-        <td>${fmtMoneyPlain(c.maliyet,p.currency)}</td>
-        <td>${fmtMoneyPlain(c.guncelDeger,p.currency)}</td>
-        <td class="${pctClass(c.karZarar)}">${fmtMoney(c.karZarar,p.currency)}</td>
-        <td class="${pctClass(c.karZararPct)}">${fmtPct(c.karZararPct)}</td>
-        <td class="row-actions">
-          <button class="btn btn-sm" data-act="hist" data-id="${row.id}">Geçmiş</button>
-          <button class="btn btn-sm" data-act="edit" data-id="${row.id}">Düzenle</button>
-          <button class="btn btn-sm btn-danger" data-act="del" data-id="${row.id}">Sil</button>
-        </td>`;
-      tbody.appendChild(tr);
-    });
+    tamamla(null);
   }
-  table.appendChild(tbody);
-  wrap.appendChild(table);
-
-  wrap.querySelectorAll("button[data-act]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const id = Number(btn.dataset.id);
-      if(btn.dataset.act==="edit"){ editingId[key]=id; renderMain(); }
-      if(btn.dataset.act==="del"){ deleteRow(key,id); }
-      if(btn.dataset.act==="hist"){ historyEditor = {key, rowId:id}; renderMain(); }
-    });
-  });
-  return wrap;
 }
 
-function toggleSort(key,col){
-  const s = sortState[key];
-  if(s.col===col) s.dir *= -1; else { s.col=col; s.dir=1; }
-  renderMain();
+function formuTemizle() {
+  document.getElementById('kitapAdi').value = '';
+  document.getElementById('yazar').value = '';
+  document.getElementById('toplamSayfa').value = '';
+  document.getElementById('okunanSayfa').value = '';
+  const dosyaInput = document.getElementById('kayitDosya');
+  if (dosyaInput) dosyaInput.value = '';
+  bugununTarihiniAyarla();
 }
 
-/* ============================= DRAWER ============================= */
-const FORM_FIELDS = [
-  {key:"kod", label:"Kod", type:"text"},
-  {key:"adet", label:"Adet", type:"number"},
-  {key:"alis", label:"Alış Fiyatı", type:"number"},
-  {key:"alisTarihi", label:"Alış Tarihi", type:"date"},
-  {key:"guncel", label:"Güncel Fiyat", type:"number"},
-];
+let sonSilinenKayit = null;
+let geriAlZamanlayici = null;
 
-function renderDrawer(key, id){
-  const p = PORTFOLIOS[key];
-  const isNew = id==="new";
-  const row = isNew ? {} : p.rows.find(r=>r.id===id);
-  const drawer = document.createElement("div");
-  drawer.className = "drawer open";
-  drawer.style.setProperty("--accent", p.accent);
-  drawer.innerHTML = `<h3>${isNew?"Yeni Kayıt":"Kaydı Düzenle"} — ${p.label}</h3>`;
-
-  const grid = document.createElement("div");
-  grid.className = "field-grid";
-  FORM_FIELDS.forEach(f => {
-    const field = document.createElement("div");
-    field.className="field";
-    const label = document.createElement("label"); label.textContent=f.label;
-    const input = document.createElement("input");
-    input.type = f.type; input.step="any"; input.dataset.field=f.key;
-    input.value = row[f.key] ?? "";
-    field.appendChild(label); field.appendChild(input);
-    grid.appendChild(field);
-  });
-  drawer.appendChild(grid);
-
-  const actions = document.createElement("div");
-  actions.className="drawer-actions";
-  const saveBtn = document.createElement("button");
-  saveBtn.className="btn btn-accent"; saveBtn.textContent = isNew?"Kaydet":"Güncelle";
-  saveBtn.onclick = () => saveRow(key, isNew?null:id, grid);
-  const cancelBtn = document.createElement("button");
-  cancelBtn.className="btn"; cancelBtn.textContent="Vazgeç";
-  cancelBtn.onclick = () => { editingId[key]=null; renderMain(); };
-  actions.appendChild(saveBtn); actions.appendChild(cancelBtn);
-  drawer.appendChild(actions);
-  return drawer;
+function sil(i) {
+  if (!confirm('Bu kayıt silinsin mi? (Silindikten sonra birkaç saniye içinde "Geri Al" ile geri getirebilirsin)')) return;
+  sonSilinenKayit = { kayit: kayitlar[i], index: i };
+  kayitlar.splice(i, 1);
+  kaydetVeri();
+  tumunuGuncelle();
+  geriAlToastGoster();
 }
 
-/* ---------- Fiyat Geçmişi paneli (değişim %'lerinin dayandığı kayıtlar) ---------- */
-function renderHistoryDrawer(key, rowId){
-  const p = PORTFOLIOS[key];
-  const row = p.rows.find(r=>r.id===rowId);
-  const drawer = document.createElement("div");
-  drawer.className = "drawer open";
-  drawer.style.setProperty("--accent", p.accent);
+function geriAl() {
+  if (!sonSilinenKayit) return;
+  kayitlar.splice(sonSilinenKayit.index, 0, sonSilinenKayit.kayit);
+  kaydetVeri();
+  tumunuGuncelle();
+  sonSilinenKayit = null;
+  clearTimeout(geriAlZamanlayici);
+  const toast = document.getElementById('geriAlToast');
+  if (toast) toast.classList.remove('gorunur');
+}
 
-  if(!row){
-    drawer.innerHTML = `<h3>Kayıt bulunamadı</h3>`;
-    return drawer;
+function geriAlToastGoster() {
+  clearTimeout(geriAlZamanlayici);
+  let toast = document.getElementById('geriAlToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'geriAlToast';
+    toast.className = 'geriAlToast';
+    toast.innerHTML = `<span>🗑️ Kayıt silindi.</span><button id="geriAlBtn" type="button">↩️ Geri Al</button>`;
+    document.body.appendChild(toast);
+    document.getElementById('geriAlBtn').addEventListener('click', geriAl);
+  }
+  // Yeniden tetiklenebilmesi için önce gizleyip bir sonraki karede tekrar gösteriyoruz.
+  toast.classList.remove('gorunur');
+  void toast.offsetWidth;
+  toast.classList.add('gorunur');
+  geriAlZamanlayici = setTimeout(() => {
+    toast.classList.remove('gorunur');
+    sonSilinenKayit = null;
+  }, 6000);
+}
+
+function duzenle(i) {
+  const k = kayitlar[i];
+  if (!k) return;
+  document.getElementById('kisi').value = k.kisi;
+  document.getElementById('tarih').value = k.tarih;
+  document.getElementById('kitapAdi').value = k.kitap;
+  document.getElementById('yazar').value = k.yazar;
+  document.getElementById('toplamSayfa').value = k.toplamSayfa;
+  document.getElementById('okunanSayfa').value = k.okunanSayfa;
+
+  duzenlenenIndex = i;
+  kaydetBtn.innerText = '💾 Değişikliği Kaydet';
+  if (iptalBtn) iptalBtn.style.display = 'inline-block';
+  document.getElementById('kaydetBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function duzenlemeyiIptalEt() {
+  duzenlenenIndex = -1;
+  formuTemizle();
+  kaydetBtn.innerText = '💾 Kaydı Ekle';
+  if (iptalBtn) iptalBtn.style.display = 'none';
+}
+
+// ------------------------------------------------------------
+// GÜNLÜK KAYITLAR TABLOSU (tarihe göre sıralı, en yeni üstte)
+// ------------------------------------------------------------
+function kayitlariGoster() {
+  const body = document.getElementById('kayitlarBody');
+  if (!body) return;
+
+  if (kayitlar.length === 0) {
+    body.innerHTML = `<tr><td colspan="7" class="bosDurum">Henüz kayıt yok. Yukarıdan yeni bir okuma kaydı ekleyin.</td></tr>`;
+    return;
   }
 
-  const entries = p.history.filter(h=>h.kod===row.kod).sort((a,b)=> b.tarih.localeCompare(a.tarih));
+  const sirali = kayitlar
+    .map((k, i) => ({ k, i }))
+    .sort((a, b) => (b.k.tarih || '').localeCompare(a.k.tarih || ''));
 
-  drawer.innerHTML = `
-    <h3>📅 ${row.kod} — Fiyat Geçmişi</h3>
-    <p style="font-size:12.5px; color:var(--text-soft); margin-top:-6px;">
-      Günlük/Haftalık/Yıllık/3 Yıllık değişim yüzdeleri, buraya eklediğiniz geçmiş tarihli fiyatlara göre otomatik hesaplanır.
-      Örn. günlük değişim için dünün tarihli bir fiyat kaydı yeterlidir.
-    </p>
-    <div class="field-grid" style="grid-template-columns:1fr 1fr auto auto;">
-      <div class="field"><label>Tarih</label><input type="date" id="histTarih"></div>
-      <div class="field"><label>Fiyat</label><input type="number" step="any" id="histFiyat"></div>
-      <div class="field" style="align-self:flex-end;"><button class="btn btn-accent" id="btnAddHist">Ekle</button></div>
-      <div class="field" style="align-self:flex-end;"><button class="btn" id="btnTodayHist">Bugünü Kaydet</button></div>
-    </div>
-    <div class="table-wrap" style="margin-top:16px;">
-      <table>
-        <thead><tr><th>Tarih</th><th>Fiyat</th><th>İşlem</th></tr></thead>
-        <tbody>
-          ${entries.length ? entries.map(h => `
-            <tr>
-              <td style="text-align:left;">${h.tarih}</td>
-              <td>${fmtMoneyPlain(h.fiyat, p.currency)}</td>
-              <td class="row-actions"><button class="btn btn-sm btn-danger" data-tarih="${h.tarih}">Sil</button></td>
-            </tr>`).join("") : `<tr class="empty-row"><td colspan="3">Henüz geçmiş kaydı yok.</td></tr>`}
-        </tbody>
-      </table>
-    </div>
-    <div class="drawer-actions">
-      <button class="btn" id="btnCloseHist">Kapat</button>
-      <button class="btn btn-danger" id="btnClearHist">Tüm Geçmişi Temizle</button>
-    </div>
-  `;
+  body.innerHTML = sirali.map(({ k, i }) => `
+    <tr>
+      <td>${formatTarih(k.tarih)}</td>
+      <td>${escapeHtml(k.kisi)}</td>
+      <td>${escapeHtml(k.kitap)}</td>
+      <td>${escapeHtml(k.yazar || '-')}</td>
+      <td>${k.okunanSayfa}</td>
+      <td>${k.dosya ? `<button class="dosyaMiniBtn" data-index="${i}" title="${escapeHtml(k.dosya.ad)}">📎</button>` : '-'}</td>
+      <td>
+        <button class="duzenleBtn" data-index="${i}" title="Düzenle">✏️</button>
+        <button class="silBtn" data-index="${i}" title="Sil">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
 
-  drawer.querySelector("#btnAddHist").onclick = () => {
-    const tarih = drawer.querySelector("#histTarih").value;
-    const fiyat = Number(drawer.querySelector("#histFiyat").value);
-    if(!tarih || !fiyat){ alert("Tarih ve fiyat girin."); return; }
-    addHistoryEntry(key, row.kod, tarih, fiyat);
-    saveState();
-    renderMain();
-  };
-  drawer.querySelector("#btnTodayHist").onclick = () => {
-    const today = new Date().toISOString().slice(0,10);
-    addHistoryEntry(key, row.kod, today, row.guncel);
-    saveState();
-    renderMain();
-  };
-  drawer.querySelector("#btnCloseHist").onclick = () => { historyEditor = null; renderMain(); };
-  drawer.querySelector("#btnClearHist").onclick = () => {
-    if(!confirm(`${row.kod} için kayıtlı tüm fiyat geçmişi silinecek (yanlış/eski kayıtları temizlemek için). Emin misiniz?`)) return;
-    PORTFOLIOS[key].history = PORTFOLIOS[key].history.filter(h=>h.kod!==row.kod);
-    saveState();
-    renderMain();
-  };
-  drawer.querySelectorAll("button[data-tarih]").forEach(btn => {
-    btn.onclick = () => {
-      deleteHistoryEntry(key, row.kod, btn.dataset.tarih);
-      saveState();
-      renderMain();
+const kayitlarBody = document.getElementById('kayitlarBody');
+if (kayitlarBody) {
+  kayitlarBody.addEventListener('click', e => {
+    const d = e.target.closest('.duzenleBtn');
+    const s = e.target.closest('.silBtn');
+    const f = e.target.closest('.dosyaMiniBtn');
+    if (d) duzenle(Number(d.dataset.index));
+    if (s) sil(Number(s.dataset.index));
+    if (f) dosyaIndir(kayitlar[Number(f.dataset.index)].dosya);
+  });
+}
+
+// ------------------------------------------------------------
+// DEVAM EDEN KİTAPLAR (ilerleme çubukları — en çok tamamlanana yakın olan üstte)
+// ------------------------------------------------------------
+function devamEdenKitaplariGoster() {
+  const alan = document.getElementById('devamEdenKitaplar');
+  if (!alan) return;
+
+  let liste = [];
+  kisiler.forEach(isim => {
+    const ist = kisiIstatistikleri(isim);
+    ist.devamEden.forEach(kt => {
+      const yuzde = kt.toplamSayfa > 0 ? Math.min(100, Math.round((kt.okunan / kt.toplamSayfa) * 100)) : 0;
+      liste.push({ isim, ...kt, yuzde });
+    });
+  });
+  liste.sort((a, b) => b.yuzde - a.yuzde);
+
+  if (liste.length === 0) {
+    alan.innerHTML = '<p class="bosDurum">🛰️ Devam eden görev yok — yeni bir maceraya başlamaya ne dersin?</p>';
+    return;
+  }
+
+  alan.innerHTML = liste.map(kt => `
+    <div class="devamKart">
+      <div class="devamBaslik">
+        <span class="devamKisi">🧑‍🚀 ${escapeHtml(kt.isim)}</span>
+        <span class="devamKitap">${escapeHtml(kt.kitap)}</span>
+      </div>
+      <div class="ilerlemeCubugu">
+        <div class="ilerlemeDolu" style="width:${kt.yuzde}%"></div>
+      </div>
+      <div class="devamAlt">
+        <span>${kt.okunan} / ${kt.toplamSayfa || '?'} sayfa</span>
+        <span>%${kt.yuzde} yakıt</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ------------------------------------------------------------
+// KİTAP ARŞİVİ (alfabetik sıralı, tamamlanma durumu ile)
+// ------------------------------------------------------------
+function kitapArsiviniGoster() {
+  const arsivBody = document.getElementById('arsivBody');
+  if (!arsivBody) return;
+
+  let tumKitaplar = [];
+  kisiler.forEach(isim => {
+    const ist = kisiIstatistikleri(isim);
+    ist.kitaplar.forEach(kt => {
+      const tamam = kt.toplamSayfa > 0 && kt.okunan >= kt.toplamSayfa;
+      tumKitaplar.push({ isim, ...kt, tamam });
+    });
+  });
+
+  tumKitaplar.sort((a, b) => a.kitap.localeCompare(b.kitap, 'tr'));
+
+  if (tumKitaplar.length === 0) {
+    arsivBody.innerHTML = `<tr><td colspan="5" class="bosDurum">Arşivde henüz kitap yok.</td></tr>`;
+    return;
+  }
+
+  arsivBody.innerHTML = tumKitaplar.map(kt => `
+    <tr>
+      <td>${escapeHtml(kt.kitap)}</td>
+      <td>${escapeHtml(kt.yazar || '-')}</td>
+      <td>${escapeHtml(kt.isim)}</td>
+      <td>${kt.okunan} / ${kt.toplamSayfa || '?'}</td>
+      <td>${kt.tamam ? '<span class="durumRozeti tamam">✅ Tamamlandı</span>' : '<span class="durumRozeti devam">📖 Devam Ediyor</span>'}</td>
+    </tr>
+  `).join('');
+}
+
+// ------------------------------------------------------------
+// GRAFİK
+// ------------------------------------------------------------
+function grafikGuncelle() {
+  const ctx = document.getElementById('okumaGrafik');
+  if (!ctx) return;
+  if (grafik) grafik.destroy();
+
+  grafik = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: kisiler,
+      datasets: [{
+        label: 'Okunan Sayfa',
+        data: kisiler.map(isim => kisiIstatistikleri(isim).toplamSayfa),
+        backgroundColor: kisiler.map((_, i) => RENKLER[i % RENKLER.length]),
+        borderRadius: 8,
+        maxBarThickness: 60
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+  });
+}
+
+// ------------------------------------------------------------
+// GELİŞİM GRAFİĞİ (zaman içinde kümülatif sayfa — kaşif başına çizgi)
+// ------------------------------------------------------------
+function gelisimVerisiHazirla() {
+  const tarihSet = new Set(kayitlar.map(k => k.tarih).filter(Boolean));
+  const tarihler = Array.from(tarihSet).sort();
+
+  const seriler = kisiler.map((isim, i) => {
+    let kumulatif = 0;
+    const veri = tarihler.map(tarih => {
+      kumulatif += kayitlar
+        .filter(k => k.kisi === isim && k.tarih === tarih)
+        .reduce((t, k) => t + Number(k.okunanSayfa || 0), 0);
+      return kumulatif;
+    });
+    return {
+      label: isim,
+      data: veri,
+      borderColor: RENKLER[i % RENKLER.length],
+      backgroundColor: RENKLER[i % RENKLER.length] + '33',
+      tension: 0.35,
+      fill: false,
+      pointRadius: 3,
     };
   });
 
-  return drawer;
+  return { tarihler, seriler };
 }
 
-function addHistoryEntry(key, kod, tarih, fiyat){
-  const history = PORTFOLIOS[key].history;
-  const idx = history.findIndex(h=>h.kod===kod && h.tarih===tarih);
-  if(idx>=0) history[idx].fiyat = fiyat;
-  else history.push({kod, tarih, fiyat});
-}
-function deleteHistoryEntry(key, kod, tarih){
-  PORTFOLIOS[key].history = PORTFOLIOS[key].history.filter(h=>!(h.kod===kod && h.tarih===tarih));
-}
+function gelisimGrafikGuncelle() {
+  const ctx = document.getElementById('gelisimGrafik');
+  const bosMesaj = document.getElementById('gelisimGrafikBos');
+  if (!ctx) return;
+  if (gelisimGrafik) gelisimGrafik.destroy();
 
-function saveRow(key, id, grid){
-  const p = PORTFOLIOS[key];
-  const inputs = grid.querySelectorAll("[data-field]");
-  const data = {};
-  let valid = true;
-  inputs.forEach(inp => {
-    let val = inp.value;
-    if(!val){ inp.style.borderColor="var(--red)"; valid=false; } else inp.style.borderColor="";
-    if(inp.type==="number") val = Number(val);
-    data[inp.dataset.field] = val;
-  });
-  if(!valid) return;
-  if(id===null){ data.id = nextId[key]++; p.rows.push(data); }
-  else { Object.assign(p.rows.find(r=>r.id===id), data); }
-  editingId[key]=null;
-  saveState();
-  renderMain();
-}
+  const { tarihler, seriler } = gelisimVerisiHazirla();
 
-function deleteRow(key,id){
-  if(!confirm("Bu kaydı silmek istediğinize emin misiniz?")) return;
-  const p = PORTFOLIOS[key];
-  const row = p.rows.find(r=>r.id===id);
-  p.rows = p.rows.filter(r=>r.id!==id);
-  // Bu koda ait başka satır kalmadıysa, o koda ait eski fiyat geçmişini de temizle
-  // (aksi halde silinen hissenin geçmişi, aynı kodla eklenen yeni bir hisseye yanlışlıkla uygulanır)
-  if(row && !p.rows.some(r=>r.kod===row.kod)){
-    p.history = p.history.filter(h=>h.kod!==row.kod);
-  }
-  saveState();
-  renderMain();
-}
-
-/* ============================= CSV EXPORT ============================= */
-function exportCSV(key){
-  const p = PORTFOLIOS[key];
-  const headers = ["Kod","Adet","Alış Fiyatı","Alış Tarihi","Güncel Fiyat","Günlük %","Haftalık %","Yıllık %","3 Yıllık %","Maliyet","Güncel Değer","Kar/Zarar","Kar/Zarar %"];
-  const lines = [headers.join(";")];
-  p.rows.forEach(r => {
-    const c = computed(r,key);
-    lines.push([r.kod,r.adet,r.alis,r.alisTarihi,r.guncel,
-      pctStr(c.gunluk),pctStr(c.haftalik),pctStr(c.yillik),pctStr(c.ucYillik),
-      c.maliyet.toFixed(2), c.guncelDeger.toFixed(2), c.karZarar.toFixed(2), pctStr(c.karZararPct)
-    ].join(";"));
-  });
-  const blob = new Blob(["\uFEFF"+lines.join("\n")], {type:"text/csv;charset=utf-8;"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = `${key}_portfoy.csv`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-function pctStr(v){ return v===null||v===undefined||isNaN(v) ? "" : (v*100).toFixed(1)+"%"; }
-
-/* ============================= CHARTS (bağımsız SVG — CDN gerektirmez) ============================= */
-function formatAxisVal(v){
-  if(Math.abs(v)>=1000) return (v/1000).toFixed(1)+"k";
-  return (Math.round(v*10)/10).toString();
-}
-
-function svgPie(container, labels, values, colors){
-  const total = values.reduce((a,b)=>a+(b>0?b:0),0);
-  const cx=50, cy=50, r=40;
-  let angle=-90;
-  let paths="";
-  const legendItems=[];
-  values.forEach((v,i) => {
-    const pct = total ? Math.max(v,0)/total : 0;
-    const sweep = pct*360;
-    const color = colors[i%colors.length];
-    if(total>0 && v>0){
-      const x1 = cx + r*Math.cos(angle*Math.PI/180);
-      const y1 = cy + r*Math.sin(angle*Math.PI/180);
-      const endAngle = angle+sweep;
-      const x2 = cx + r*Math.cos(endAngle*Math.PI/180);
-      const y2 = cy + r*Math.sin(endAngle*Math.PI/180);
-      const largeArc = sweep>180?1:0;
-      paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${largeArc} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${color}" stroke="#0a0d10" stroke-width="0.5"><title>${labels[i]}: %${(pct*100).toFixed(1)}</title></path>`;
-      angle = endAngle;
-    }
-    legendItems.push({label:labels[i], pct, color});
-  });
-  if(!paths){
-    container.innerHTML = `<div class="empty-chart">Gösterilecek veri yok</div>`;
+  if (tarihler.length < 2 || kisiler.length === 0) {
+    ctx.style.display = 'none';
+    if (bosMesaj) bosMesaj.style.display = 'block';
     return;
   }
-  const svg = `<svg class="svg-chart" viewBox="0 0 100 100" style="max-width:190px;flex:0 0 auto;">${paths}</svg>`;
-  const legend = `<ul class="chart-legend">${legendItems.map(it=>`<li><span class="swatch" style="background:${it.color}"></span>${it.label} · %${(it.pct*100).toFixed(1)}</li>`).join("")}</ul>`;
-  container.innerHTML = svg + legend;
-}
 
-function svgBarGrouped(container, labels, datasets, opts={}){
-  if(labels.length===0){ container.innerHTML = `<div class="empty-chart">Gösterilecek veri yok</div>`; return; }
-  const suffix = opts.suffix || "";
-  const W=600, H=240, padL=48, padR=14, padT=14, padB=32;
-  const plotW=W-padL-padR, plotH=H-padT-padB;
-  const allVals = datasets.flatMap(d=>d.data);
-  let min = Math.min(0,...allVals), max = Math.max(0,...allVals);
-  if(min===max) max = min+1;
-  const range = max-min;
-  const yForVal = v => padT + plotH - ((v-min)/range)*plotH;
-  const zeroY = yForVal(0);
-  const n = labels.length;
-  const groupW = plotW/n;
-  const gap=4;
-  const barW = Math.max((groupW - gap*(datasets.length+1))/datasets.length, 2);
+  ctx.style.display = 'block';
+  if (bosMesaj) bosMesaj.style.display = 'none';
 
-  let svg = `<svg class="svg-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
-  const steps=4;
-  for(let i=0;i<=steps;i++){
-    const v = min + (range*i/steps);
-    const y = yForVal(v);
-    svg += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>`;
-    svg += `<text x="${padL-6}" y="${(y+3).toFixed(1)}" font-size="9.5" text-anchor="end">${formatAxisVal(v)}${suffix}</text>`;
-  }
-  svg += `<line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W-padR}" y2="${zeroY.toFixed(1)}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
-
-  labels.forEach((label,i) => {
-    const groupX = padL + i*groupW;
-    datasets.forEach((ds,j) => {
-      const val = ds.data[i] ?? 0;
-      const barX = groupX + gap + j*(barW+gap);
-      const y1 = yForVal(val);
-      const barY = Math.min(y1,zeroY);
-      const barH = Math.max(Math.abs(y1-zeroY), 0.5);
-      const color = typeof ds.color === "function" ? ds.color(val) : ds.color;
-      svg += `<rect x="${barX.toFixed(1)}" y="${barY.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" fill="${color}" rx="2"><title>${label} · ${ds.label}: ${val}${suffix}</title></rect>`;
-    });
-    svg += `<text x="${(groupX+groupW/2).toFixed(1)}" y="${(H-padB+16).toFixed(1)}" font-size="10" text-anchor="middle">${label}</text>`;
+  gelisimGrafik = new Chart(ctx, {
+    type: 'line',
+    data: { labels: tarihler.map(formatTarih), datasets: seriler },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12 } } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Toplam Sayfa' } } }
+    }
   });
-  svg += `</svg>`;
-
-  const showLegend = datasets.length>1;
-  const legend = showLegend ? `<ul class="chart-legend">${datasets.map(ds=>`<li><span class="swatch" style="background:${typeof ds.color==='function'?'#8992a0':ds.color}"></span>${ds.label}</li>`).join("")}</ul>` : "";
-  container.innerHTML = svg + legend;
 }
 
-function pct100(v){ return v===null||v===undefined||isNaN(v) ? 0 : +(v*100).toFixed(1); }
+// ------------------------------------------------------------
+// ÖDÜLLER REHBERİ (tüm ödüller ve nasıl kazanıldıkları)
+// ------------------------------------------------------------
+function odullerRehberiniGoster() {
+  const alan = document.getElementById('odullerRehberi');
+  if (!alan) return;
 
-function renderChartsSection(key){
-  const p = PORTFOLIOS[key];
-  const section = document.createElement("div");
-  section.innerHTML = `<div class="section-title">Grafikler</div>`;
+  const rozetSatirlari = KILOMETRE_TASLARI.map(k => `
+    <div class="oduTanim">
+      <span class="oduEmoji">${k.emoji}</span>
+      <div><strong>${escapeHtml(k.ad)}</strong><span>Toplamda ${k.sinir}+ sayfa okuyunca kazanılır</span></div>
+    </div>
+  `).join('');
 
-  const grid1 = document.createElement("div"); grid1.className="chart-grid";
-  grid1.innerHTML = `
-    <div class="chart-card"><h4>Portföy Dağılımı (Güncel Değere Göre)</h4><div class="canvas-box" id="box-${key}-pie"></div></div>
-    <div class="chart-card"><h4>Hisse Bazında Kar/Zarar</h4><div class="canvas-box" id="box-${key}-pl"></div></div>
-  `;
-  section.appendChild(grid1);
-
-  const grid2 = document.createElement("div"); grid2.className="chart-grid";
-  grid2.innerHTML = `
-    <div class="chart-card"><h4>Performans Karşılaştırması (%)</h4><div class="canvas-box" id="box-${key}-perf"></div></div>
-    <div class="chart-card"><h4>Maliyet ve Güncel Değer</h4><div class="canvas-box" id="box-${key}-cv"></div></div>
-  `;
-  section.appendChild(grid2);
-
-  requestAnimationFrame(() => drawCharts(key));
-  return section;
-}
-
-function drawCharts(key){
-  const p = PORTFOLIOS[key];
-  const labels = p.rows.map(r=>r.kod);
-  const enriched = p.rows.map(r=>({row:r,c:computed(r,key)}));
-  const palette = ["#d9a441","#4f8fd1","#3fb6a8","#8a6fd6","#e0554f","#7d9c46","#c2703a","#c25a9e"];
-
-  const pieBox = document.getElementById(`box-${key}-pie`);
-  if(pieBox) svgPie(pieBox, labels, enriched.map(e=>e.c.guncelDeger), palette);
-
-  const plBox = document.getElementById(`box-${key}-pl`);
-  if(plBox) svgBarGrouped(plBox, labels, [
-    {label:"Kar/Zarar", data:enriched.map(e=>e.c.karZarar), color:v=>v>=0?"#22b573":"#e0554f"}
-  ], {suffix:""});
-
-  const perfBox = document.getElementById(`box-${key}-perf`);
-  if(perfBox) svgBarGrouped(perfBox, labels, [
-    {label:"Günlük", data:enriched.map(e=>pct100(e.c.gunluk)), color:"#d9a441"},
-    {label:"Haftalık", data:enriched.map(e=>pct100(e.c.haftalik)), color:"#4f8fd1"},
-    {label:"Yıllık", data:enriched.map(e=>pct100(e.c.yillik)), color:"#3fb6a8"},
-    {label:"3 Yıllık", data:enriched.map(e=>pct100(e.c.ucYillik)), color:"#8a6fd6"},
-  ], {suffix:"%"});
-
-  const cvBox = document.getElementById(`box-${key}-cv`);
-  if(cvBox) svgBarGrouped(cvBox, labels, [
-    {label:"Maliyet", data:enriched.map(e=>e.c.maliyet), color:"#5b6472"},
-    {label:"Güncel Değer", data:enriched.map(e=>e.c.guncelDeger), color:p.accent},
-  ], {suffix:""});
-}
-
-/* ============================= OVERVIEW ============================= */
-function renderOverview(){
-  const panel = document.createElement("div");
-  panel.className = "panel active";
-
-  const fxRow = document.createElement("div");
-  fxRow.className = "fx-row";
-  fxRow.innerHTML = `<label>USD/TRY Kuru</label><input type="number" step="0.01" id="fxInput" value="${usdTry}"> <span style="color:var(--text-soft); font-size:12px;">— ABD ve Kripto portföylerini TL'ye çevirmek için, kendi güncel kurunuzu girin</span>`;
-  panel.appendChild(fxRow);
-  requestAnimationFrame(() => {
-    document.getElementById("fxInput").addEventListener("input", e => {
-      usdTry = Number(e.target.value)||0; saveState(); renderMain();
-    });
-  });
-
-  const bTot = portfolioTotals("bist"), aTot = portfolioTotals("abd"), fTot = portfolioTotals("fon"), kTot = portfolioTotals("kripto");
-  const aTotTL = { maliyet:aTot.maliyet*usdTry, guncelDeger:aTot.guncelDeger*usdTry, karZarar:aTot.karZarar*usdTry };
-  const kTotTL = { maliyet:kTot.maliyet*usdTry, guncelDeger:kTot.guncelDeger*usdTry, karZarar:kTot.karZarar*usdTry };
-  const grandMaliyet = bTot.maliyet + aTotTL.maliyet + fTot.maliyet + kTotTL.maliyet;
-  const grandDeger = bTot.guncelDeger + aTotTL.guncelDeger + fTot.guncelDeger + kTotTL.guncelDeger;
-  const grandKZ = grandDeger - grandMaliyet;
-  const grandKZPct = safeDiv(grandKZ, grandMaliyet);
-
-  const cards = document.createElement("div");
-  cards.className = "cards";
-  cards.innerHTML = `
-    <div class="card"><div class="label">Toplam Maliyet (TL eşd.)</div><div class="value">${fmtMoneyPlain(grandMaliyet,"TL")}</div></div>
-    <div class="card"><div class="label">Toplam Güncel Değer (TL eşd.)</div><div class="value">${fmtMoneyPlain(grandDeger,"TL")}</div></div>
-    <div class="card"><div class="label">Toplam Kar/Zarar</div><div class="value ${pctClass(grandKZ)}">${fmtMoney(grandKZ,"TL")}</div><div class="sub ${pctClass(grandKZPct)}">${fmtPct(grandKZPct)}</div></div>
-  `;
-  panel.appendChild(cards);
-
-  const section = document.createElement("div");
-  section.innerHTML = `<div class="section-title">Portföyler Arası Dağılım (TL Eşdeğeri)</div>`;
-  const grid = document.createElement("div"); grid.className="chart-grid";
-  grid.innerHTML = `
-    <div class="chart-card"><h4>Portföy Payları</h4><div class="canvas-box" id="box-ov-pie"></div></div>
-    <div class="chart-card"><h4>Portföy Bazında Kar/Zarar (TL Eşd.)</h4><div class="canvas-box" id="box-ov-pl"></div></div>
-  `;
-  section.appendChild(grid);
-  panel.appendChild(section);
-
-  requestAnimationFrame(() => {
-    const pieBox = document.getElementById("box-ov-pie");
-    if(pieBox) svgPie(pieBox, ["BIST","ABD","Fon","Kripto"], [bTot.guncelDeger, aTotTL.guncelDeger, fTot.guncelDeger, kTotTL.guncelDeger], ["#d9a441","#4f8fd1","#3fb6a8","#e0954f"]);
-    const plBox = document.getElementById("box-ov-pl");
-    if(plBox) svgBarGrouped(plBox, ["BIST","ABD","Fon","Kripto"], [
-      {label:"Kar/Zarar (TL)", data:[bTot.karZarar, aTotTL.karZarar, fTot.karZarar, kTotTL.karZarar], color:v=>v>=0?"#22b573":"#e0554f"}
-    ], {suffix:""});
-  });
-
-  return panel;
-}
-
-/* ============================= MAKROEKONOMİK VERİLER (bağımsız bölüm) ============================= */
-function macroCounts(){
-  let total=0, done=0;
-  MACRO.categories.forEach(cat => cat.items.forEach(it => { total++; if(it.incelendi) done++; }));
-  return {total, done};
-}
-
-function renderMacroPanel(){
-  const panel = document.createElement("div");
-  panel.className = "panel active";
-  panel.style.setProperty("--accent", "#c2703a");
-
-  const {total, done} = macroCounts();
-  const cards = document.createElement("div");
-  cards.className = "cards";
-  cards.innerHTML = `
-    <div class="card"><div class="label">Toplam Gösterge</div><div class="value">${total}</div></div>
-    <div class="card"><div class="label">İncelenen</div><div class="value pos">${done}</div></div>
-    <div class="card"><div class="label">Bekleyen</div><div class="value">${total-done}</div></div>
-    <div class="card"><div class="label">Tamamlanma</div><div class="value">%${total?Math.round(done/total*100):0}</div></div>
-  `;
-  panel.appendChild(cards);
-
-  const grid = document.createElement("div");
-  grid.className = "macro-grid";
-  MACRO.categories.forEach(cat => {
-    const catDone = cat.items.filter(i=>i.incelendi).length;
-    const card = document.createElement("div");
-    card.className = "macro-card";
-    card.innerHTML = `
-      <div class="macro-card-head">
-        <h4>${cat.label}</h4>
-        <span class="macro-count">${catDone}/${cat.items.length}</span>
+  const hayvanBlok = Object.values(HAYVAN_TURLERI).map(tur => `
+    <div class="oduHayvanAile">
+      <strong>${escapeHtml(tur.ad)}</strong>
+      <div class="oduHayvanZinciri">
+        ${tur.asamalar.map((a, i) => `
+          <div class="oduHayvanAsama">
+            <span class="oduHayvanEmoji">${a.emoji}</span>
+            <span>${escapeHtml(a.ad)}</span>
+            <small>${EVRIM_ESIKLERI[i]}+ kitap</small>
+          </div>
+          ${i < tur.asamalar.length - 1 ? '<span class="oduOk">→</span>' : ''}
+        `).join('')}
       </div>
-      <ul class="macro-list">
-        ${cat.items.map(it => `
-          <li class="macro-item ${it.incelendi?'done':''}" data-cat="${cat.key}" data-id="${it.id}">
-            <label class="macro-check">
-              <input type="checkbox" ${it.incelendi?'checked':''} data-act="toggle" data-cat="${cat.key}" data-id="${it.id}">
-              <span>${it.isim}</span>
-            </label>
-            <div class="macro-item-right">
-              ${it.incelendi
-                ? `<input type="date" class="macro-date" value="${it.tarih||''}" data-act="date" data-cat="${cat.key}" data-id="${it.id}">`
-                : `<span class="macro-date-empty">—</span>`}
-              <button class="btn btn-sm btn-danger" data-act="del" data-cat="${cat.key}" data-id="${it.id}">✕</button>
-            </div>
-          </li>
-        `).join("")}
-      </ul>
-      <div class="macro-add-row">
-        <input type="text" class="macro-add-input" placeholder="Yeni gösterge adı…" data-cat="${cat.key}">
-        <button class="btn btn-sm btn-accent" data-act="add" data-cat="${cat.key}">+ Ekle</button>
+    </div>
+  `).join('');
+
+  alan.innerHTML = `
+    <h3 class="oduBaslik">🌟 Kaşif Rozetleri <span class="oduAltbilgi">(toplam okunan sayfaya göre)</span></h3>
+    <div class="oduListesi">${rozetSatirlari}</div>
+
+    <h3 class="oduBaslik">🏆 Kupa Dolabı</h3>
+    <div class="oduTanim">
+      <span class="oduEmoji">🏆</span>
+      <div><strong>Okuma Kupası</strong><span>Her ${KUPA_ARALIGI} tamamlanan kitapta 1 kupa kazanılır. Kupa sayısı sınırsız artar!</span></div>
+    </div>
+
+    <h3 class="oduBaslik">🐾 Büyülü Dost</h3>
+    <p class="oduAciklama">${EVRIM_ESIKLERI[0]} kitap tamamlayınca bir büyülü dost seçilir: Kedi, Kertenkele, Kurt, Kuş veya Balık. Her ${EVRIM_ESIKLERI[0]} kitapta bir üst forma evrim geçirir. Her hayvanın kendine özgü bir sesi var — 🔊 düğmesine basarak dinleyebilirsin:</p>
+    <div class="oduHayvanListesi">${hayvanBlok}</div>
+
+    <h3 class="oduBaslik">📈 Gelişim Mesajları</h3>
+    <div class="oduTanim">
+      <span class="oduEmoji">⭐</span>
+      <div><strong>Haftalık Karşılaştırma</strong><span>Her kaşifin kartında, bu haftaki okuması geçen haftayla karşılaştırılıp teşvik edici bir mesaj gösterilir.</span></div>
+    </div>
+  `;
+}
+
+// ------------------------------------------------------------
+// DOSYA İŞLEMLERİ (kayda ek dosya + genel dosya arşivi)
+// PDF ve Excel dosyaları base64 olarak tarayıcıda (localStorage) saklanır.
+// ------------------------------------------------------------
+const IZIN_VERILEN_UZANTILAR = ['pdf', 'xlsx', 'xls'];
+const MAKS_DOSYA_BOYUTU = 4 * 1024 * 1024; // 4MB
+
+function dosyaOku(file, callback) {
+  const uzanti = file.name.split('.').pop().toLowerCase();
+
+  if (!IZIN_VERILEN_UZANTILAR.includes(uzanti)) {
+    alert('Sadece PDF ve Excel (.xlsx, .xls) dosyaları eklenebilir.');
+    callback(null);
+    return;
+  }
+  if (file.size > MAKS_DOSYA_BOYUTU) {
+    alert('Dosya çok büyük (4MB üzeri). Daha küçük bir dosya seçin.');
+    callback(null);
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => callback({ ad: file.name, tur: uzanti, boyut: file.size, tarih: new Date().toISOString(), veri: reader.result });
+  reader.onerror = () => { alert('Dosya okunamadı.'); callback(null); };
+  reader.readAsDataURL(file);
+}
+
+function dosyaIndir(dosya) {
+  if (!dosya) return;
+  const a = document.createElement('a');
+  a.href = dosya.veri;
+  a.download = dosya.ad;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+// Genel Dosya Arşivi
+const dosyaArsivInput = document.getElementById('dosyaArsivInput');
+if (dosyaArsivInput) {
+  dosyaArsivInput.addEventListener('change', function (event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    dosyaOku(file, (dosya) => {
+      if (!dosya) { event.target.value = ''; return; }
+      dosyaArsivi.push({ id: Date.now(), ...dosya });
+      kaydetDosyaArsivi();
+      dosyaArsiviniGoster();
+      event.target.value = '';
+    });
+  });
+}
+
+function dosyaArsivindenSil(id) {
+  if (!confirm('Bu dosya arşivden silinsin mi?')) return;
+  dosyaArsivi = dosyaArsivi.filter(d => d.id !== id);
+  kaydetDosyaArsivi();
+  dosyaArsiviniGoster();
+}
+
+function dosyaArsiviniGoster() {
+  const alan = document.getElementById('dosyaArsiviListesi');
+  if (!alan) return;
+
+  if (dosyaArsivi.length === 0) {
+    alan.innerHTML = '<p class="bosDurum">📁 Arşivde henüz dosya yok. PDF veya Excel dosyası ekleyerek başlayın.</p>';
+    return;
+  }
+
+  alan.innerHTML = dosyaArsivi.map(d => `
+    <div class="dosyaKart">
+      <span class="dosyaIkon">${d.tur === 'pdf' ? '📄' : '📊'}</span>
+      <div class="dosyaBilgi">
+        <strong>${escapeHtml(d.ad)}</strong>
+        <span>${boyutFormatla(d.boyut)} · ${new Date(d.tarih).toLocaleDateString('tr-TR')}</span>
+      </div>
+      <button class="dosyaIndirBtn2" data-id="${d.id}" title="İndir">⬇️</button>
+      <button class="dosyaSilBtn" data-id="${d.id}" title="Sil">🗑️</button>
+    </div>
+  `).join('');
+}
+
+const dosyaArsiviListesi = document.getElementById('dosyaArsiviListesi');
+if (dosyaArsiviListesi) {
+  dosyaArsiviListesi.addEventListener('click', e => {
+    const indirBtn = e.target.closest('.dosyaIndirBtn2');
+    const silBtn = e.target.closest('.dosyaSilBtn');
+    if (indirBtn) {
+      const d = dosyaArsivi.find(x => x.id === Number(indirBtn.dataset.id));
+      dosyaIndir(d);
+    }
+    if (silBtn) dosyaArsivindenSil(Number(silBtn.dataset.id));
+  });
+}
+
+// ------------------------------------------------------------
+// EXCEL DIŞA / İÇE AKTARMA
+// ------------------------------------------------------------
+const excelAktarBtn = document.getElementById('excelAktarBtn');
+if (excelAktarBtn) excelAktarBtn.addEventListener('click', excelAktar);
+
+function excelAktar() {
+  if (kayitlar.length === 0) { alert('Aktarılacak kayıt yok.'); return; }
+
+  const veri = kayitlar.map(k => ({
+    Tarih: k.tarih,
+    Kisi: k.kisi,
+    Kitap: k.kitap,
+    Yazar: k.yazar,
+    OkunanSayfa: k.okunanSayfa,
+    ToplamSayfa: k.toplamSayfa
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(veri);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Kitaplar");
+  XLSX.writeFile(wb, `KitapTakip_${bugunYYYYMMDD()}.xlsx`);
+}
+
+const excelDosyaInput = document.getElementById('excelDosya');
+if (excelDosyaInput) excelDosyaInput.addEventListener('change', excelYukle);
+
+function excelYukle(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const satirlar = XLSX.utils.sheet_to_json(sheet);
+      let eklenen = 0;
+
+      satirlar.forEach(satir => {
+        const kisiHam = String(satir.Kisi || satir.kisi || '').trim();
+        const kitap = String(satir.Kitap || satir.kitap || '').trim();
+        if (!kisiHam || !kitap) return;
+
+        const mevcut = kisiler.find(k => k.trim().toLocaleLowerCase('tr') === kisiHam.toLocaleLowerCase('tr'));
+        const kisi = mevcut || kisiHam;
+        if (!mevcut) kisiler.push(kisiHam);
+
+        kayitlar.push({
+          kisi,
+          tarih: String(satir.Tarih || satir.tarih || ''),
+          kitap,
+          yazar: String(satir.Yazar || satir.yazar || ''),
+          toplamSayfa: Number(satir.ToplamSayfa || satir.toplamSayfa || 0),
+          okunanSayfa: Number(satir.OkunanSayfa || satir.okunanSayfa || 0),
+        });
+        eklenen++;
+      });
+
+      kaydetVeri();
+      tumunuGuncelle();
+      alert(`✅ ${eklenen} kayıt başarıyla içe aktarıldı.`);
+    } catch (err) {
+      alert('Excel dosyası okunamadı. Lütfen dosya formatını kontrol edin.');
+    }
+    event.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ------------------------------------------------------------
+// PDF RAPORU
+// ------------------------------------------------------------
+const pdfBtn = document.getElementById("pdfBtn");
+if (pdfBtn) pdfBtn.addEventListener("click", pdfOlustur);
+
+function pdfOlustur() {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+
+  pdf.setFontSize(20);
+  pdf.text("Kitap Takip Pro Raporu", 20, 20);
+  pdf.setFontSize(10);
+  pdf.text("Olusturulma Tarihi: " + new Date().toLocaleDateString('tr-TR'), 20, 27);
+
+  let y = 40;
+
+  if (kisiler.length === 0) {
+    pdf.setFontSize(12);
+    pdf.text("Henuz kayitli okuyucu yok.", 20, y);
+  }
+
+  kisiler.forEach(isim => {
+    const ist = kisiIstatistikleri(isim);
+    pdf.setFontSize(14);
+    pdf.text(`${isim} - ${ist.tamamlanan.length} kitap, ${ist.toplamSayfa} sayfa`, 20, y);
+    y += 8;
+    pdf.setFontSize(10);
+
+    ist.kitaplar.forEach(kt => {
+      const durum = (kt.toplamSayfa > 0 && kt.okunan >= kt.toplamSayfa) ? 'Tamamlandi' : 'Devam Ediyor';
+      const satir = `  - ${kt.kitap} (${kt.yazar || '-'}) - ${kt.okunan}/${kt.toplamSayfa || '?'} - ${durum}`;
+      pdf.text(satir, 22, y);
+      y += 6;
+      if (y > 280) { pdf.addPage(); y = 20; }
+    });
+
+    y += 6;
+    if (y > 270) { pdf.addPage(); y = 20; }
+  });
+
+  pdf.save(`KitapTakipRaporu_${bugunYYYYMMDD()}.pdf`);
+}
+
+// ------------------------------------------------------------
+// TÜMÜNÜ GÜNCELLE (ana yenileme fonksiyonu)
+// ------------------------------------------------------------
+function tumunuGuncelle() {
+  kisiListesiniGuncelle();
+  kisiKartlariniOlustur();
+  genelIstatistikleriGuncelle();
+  kayitlariGoster();
+  devamEdenKitaplariGoster();
+  kitapArsiviniGoster();
+  grafikGuncelle();
+  gelisimGrafikGuncelle();
+  dosyaArsiviniGoster();
+  odullerRehberiniGoster();
+}
+
+// ============================================================
+// ÇOCUK DÜNYA ATLASI
+// Statik, eğitici içerik — okuma takibinden bağımsız ayrı bir bölüm.
+// Görseller telif/ağ bağımlılığı olmaması için büyük emoji ile temsil
+// edilir (offline çalışma prensibiyle uyumlu).
+// Yeni ülke/bilgi eklemek için sadece aşağıdaki dizilere yeni bir
+// nesne eklemek yeterlidir — arayüz otomatik güncellenir.
+// ============================================================
+const ULKELER = [
+  {
+    bayrak: '🇹🇷', ad: 'Türkiye', baskent: 'Ankara', kita: 'Asya / Avrupa', gorsel: '🎈',
+    mekan: { ad: 'Kapadokya', bilgi: 'Peribacaları denen ilginç kaya oluşumlarıyla ünlüdür, sıcak hava balonlarıyla gökyüzünden izlenir.' },
+    hayvan: { emoji: '🐈', ad: 'Van Kedisi', bilgi: 'Genelde bir gözü mavi bir gözü sarı/yeşil olur ve suda yüzmeyi seven nadir kedilerdendir.' },
+    bilgiNotu: 'Türkiye, Asya ile Avrupa\'yı birbirine bağlayan İstanbul Boğazı\'na sahip tek ülkedir!',
+  },
+  {
+    bayrak: '🇫🇷', ad: 'Fransa', baskent: 'Paris', kita: 'Avrupa', gorsel: '🗼',
+    mekan: { ad: 'Eyfel Kulesi', bilgi: 'Yaklaşık 330 metre yüksekliğindedir ve sıcak havada demir genleştiği için birkaç santim uzayabilir.' },
+    hayvan: { emoji: '🐓', ad: 'Galya Horozu', bilgi: 'Fransa\'nın milli sembolüdür, gururlu duruşuyla bilinir.' },
+    bilgiNotu: 'Fransa\'da 1000\'den fazla çeşit peynir üretilir!',
+  },
+  {
+    bayrak: '🇪🇬', ad: 'Mısır', baskent: 'Kahire', kita: 'Afrika', gorsel: '🔺',
+    mekan: { ad: 'Giza Piramitleri', bilgi: 'Binlerce yıl önce, hiç modern makine yokken dev taş bloklarla inşa edilmiştir.' },
+    hayvan: { emoji: '🐫', ad: 'Deve', bilgi: 'Hörgücünde yağ depolar ve susuz günlerce çölde yolculuk edebilir.' },
+    bilgiNotu: 'Nil Nehri, dünyanın en uzun nehirlerinden biridir ve Mısır\'ın can damarıdır.',
+  },
+  {
+    bayrak: '🇨🇳', ad: 'Çin', baskent: 'Pekin', kita: 'Asya', gorsel: '🧱',
+    mekan: { ad: 'Çin Seddi', bilgi: 'Uzunluğu binlerce kilometredir; bazı bölümleri uzaydan bile fark edilebilir denir (aslında çok da net görülmez, ama efsanesi böyledir!).' },
+    hayvan: { emoji: '🐼', ad: 'Dev Panda', bilgi: 'Günde neredeyse 12 saat bambu yiyerek geçirir.' },
+    bilgiNotu: 'Çin\'de kağıt, pusula ve barut gibi birçok önemli buluş binlerce yıl önce yapılmıştır.',
+  },
+  {
+    bayrak: '🇯🇵', ad: 'Japonya', baskent: 'Tokyo', kita: 'Asya', gorsel: '🗻',
+    mekan: { ad: 'Fuji Dağı', bilgi: 'Japonya\'nın en yüksek dağıdır ve kar kaplı zirvesiyle sanat eserlerine ilham vermiştir.' },
+    hayvan: { emoji: '🐒', ad: 'Kar Maymunu', bilgi: 'Kışın kar altında sıcak kaplıcalara girerek ısınır.' },
+    bilgiNotu: 'Japonya\'da ilkbaharda kiraz çiçeklerini (sakura) izlemek için özel şenlikler düzenlenir.',
+  },
+  {
+    bayrak: '🇦🇺', ad: 'Avustralya', baskent: 'Canberra', kita: 'Okyanusya', gorsel: '🪨',
+    mekan: { ad: 'Ayers Rock (Uluru)', bilgi: 'Dünyanın en büyük tek kaya parçalarından biridir ve gün batımında rengi kızıla döner.' },
+    hayvan: { emoji: '🦘', ad: 'Kanguru', bilgi: 'Yavrularını karnındaki kesede taşır ve saatte 70 km hıza kadar zıplayabilir.' },
+    bilgiNotu: 'Avustralya, hem bir ülke hem de bir kıtadır!',
+  },
+  {
+    bayrak: '🇰🇪', ad: 'Kenya', baskent: 'Nairobi', kita: 'Afrika', gorsel: '🌅',
+    mekan: { ad: 'Masai Mara', bilgi: 'Her yıl milyonlarca gnu ve zebranın yer değiştirdiği büyük göç bu bölgede yaşanır.' },
+    hayvan: { emoji: '🦁', ad: 'Aslan', bilgi: 'Sürü halinde (aslan sürüsüne "gurur" denir) yaşayan tek büyük kedi türüdür.' },
+    bilgiNotu: 'Kenya\'da dünyanın en hızlı kara hayvanı olan çita da yaşar.',
+  },
+  {
+    bayrak: '🇧🇷', ad: 'Brezilya', baskent: 'Brasília', kita: 'Güney Amerika', gorsel: '🌳',
+    mekan: { ad: 'Amazon Ormanları', bilgi: 'Dünyanın oksijeninin büyük bir kısmını üretir, bu yüzden "Dünya\'nın Akciğerleri" olarak anılır.' },
+    hayvan: { emoji: '🦜', ad: 'Toukan (Tukan Kuşu)', bilgi: 'Rengarenk ve kocaman gagasıyla tanınır, bu gaga aslında çok hafiftir.' },
+    bilgiNotu: 'Amazon Nehri\'nde piranha ve pembe yunuslar gibi ilginç canlılar yaşar.',
+  },
+  {
+    bayrak: '🇺🇸', ad: 'Amerika Birleşik Devletleri', baskent: 'Washington D.C.', kita: 'Kuzey Amerika', gorsel: '🗽',
+    mekan: { ad: 'Büyük Kanyon', bilgi: 'Colorado Nehri\'nin milyonlarca yılda oyduğu devasa bir vadidir, bazı yerlerde 1,8 km derinliğindedir.' },
+    hayvan: { emoji: '🦅', ad: 'Kel Kartal', bilgi: 'ABD\'nin milli sembolüdür ve gözleri insan gözünden çok daha keskindir.' },
+    bilgiNotu: 'Özgürlük Heykeli, Fransa tarafından ABD\'ye hediye edilmiştir.',
+  },
+  {
+    bayrak: '🇮🇹', ad: 'İtalya', baskent: 'Roma', kita: 'Avrupa', gorsel: '🏛️',
+    mekan: { ad: 'Kolezyum', bilgi: 'Antik Roma\'da binlerce kişinin gösterileri izlediği dev bir arenadır.' },
+    hayvan: { emoji: '🐺', ad: 'Kurt', bilgi: 'Efsaneye göre Roma şehrinin kurucuları bir dişi kurt tarafından büyütülmüştür.' },
+    bilgiNotu: 'Pizza ve makarna dünyaya İtalya\'dan yayılmıştır.',
+  },
+  {
+    bayrak: '🇮🇳', ad: 'Hindistan', baskent: 'Yeni Delhi', kita: 'Asya', gorsel: '🕌',
+    mekan: { ad: 'Tac Mahal', bilgi: 'Bir hükümdarın eşinin anısına inşa ettirdiği, beyaz mermerden yapılmış muhteşem bir anıt mezardır.' },
+    hayvan: { emoji: '🐅', ad: 'Bengal Kaplanı', bilgi: 'Her kaplanın çizgileri parmak izi gibi kendine özgüdür, hiçbiri birbirinin aynısı değildir.' },
+    bilgiNotu: 'Satranç oyunu ilk olarak Hindistan\'da ortaya çıkmıştır.',
+  },
+  {
+    bayrak: '🐧', ad: 'Antarktika', baskent: 'Sabit yerleşim yok', kita: 'Antarktika (kıta)', gorsel: '🧊',
+    mekan: { ad: 'Buzul Kıtası', bilgi: 'Dünyanın en soğuk, en rüzgarlı ve en kurak kıtasıdır; buzu bazı yerlerde 4 km kalınlığa ulaşır.' },
+    hayvan: { emoji: '🐧', ad: 'İmparator Penguen', bilgi: 'Uçamaz ama harika yüzücüdür ve yumurtasını babası ayaklarının üzerinde aylarca ısıtır.' },
+    bilgiNotu: 'Antarktika\'da hiç sürekli yaşayan insan nüfusu yoktur, sadece bilim insanları geçici olarak kalır.',
+  },
+];
+
+const BILIM_DUNYASI = {
+  uzay: {
+    aciklama: 'Gökyüzünün ötesinde neler var, hep merak edilir. İşte uzay hakkında bilmen gereken bazı harika bilgiler!',
+    kartlar: [
+      { gorsel: '☀️', baslik: 'Güneş', bilgi: 'Güneş aslında dev bir yıldızdır! İçine 1 milyondan fazla Dünya sığabilir.' },
+      { gorsel: '🌕', baslik: 'Ay', bilgi: 'Ay, Dünya\'nın etrafında yaklaşık 27 günde bir tur atar ve kendi ışığı yoktur, Güneş ışığını yansıtır.' },
+      { gorsel: '🪐', baslik: 'Satürn', bilgi: 'Satürn\'ün etrafındaki halkalar aslında milyonlarca buz ve kaya parçasından oluşur.' },
+      { gorsel: '🕳️', baslik: 'Kara Delik', bilgi: 'Kara delikler o kadar güçlü bir yer çekimine sahiptir ki ışık bile içinden kaçamaz!' },
+      { gorsel: '👨‍🚀', baslik: 'Astronotlar', bilgi: 'Uzayda yer çekimi çok az olduğu için astronotlar havada süzülür, boyları bile birkaç santim uzayabilir.' },
+      { gorsel: '⭐', baslik: 'Yıldızlar', bilgi: 'Gökyüzünde gördüğün birçok yıldız, Güneş\'ten çok daha büyük olabilir; sadece çok uzakta oldukları için küçük görünürler.' },
+    ],
+  },
+  yeralti: {
+    aciklama: 'Ayaklarımızın altında gizli bir dünya var! İşte yer altında neler olduğuna dair ilginç bilgiler.',
+    kartlar: [
+      { gorsel: '🕳️', baslik: 'Mağaralar', bilgi: 'Bazı mağaralar o kadar büyüktür ki içlerinde koca bir orman veya göl bile olabilir.' },
+      { gorsel: '🌋', baslik: 'Volkanlar', bilgi: 'Yer altındaki erimiş kayalara magma denir; yeryüzüne çıktığında ona lav adı verilir.' },
+      { gorsel: '🦴', baslik: 'Fosiller', bilgi: 'Fosiller, milyonlarca yıl önce yaşamış canlıların taşlaşmış izleridir ve bize dinozorlar hakkında bilgi verir.' },
+      { gorsel: '🐛', baslik: 'Solucanlar', bilgi: 'Solucanlar toprağı kazarak havalandırır, bu da bitkilerin daha iyi büyümesine yardımcı olur.' },
+      { gorsel: '💎', baslik: 'Değerli Taşlar', bilgi: 'Elmaslar, yer kabuğunun derinliklerinde yüksek basınç ve sıcaklık altında milyonlarca yılda oluşur.' },
+      { gorsel: '🌍', baslik: 'Yer Katmanları', bilgi: 'Dünya\'nın en içindeki çekirdek katmanı, Güneş\'in yüzeyi kadar sıcak olabilir!' },
+    ],
+  },
+  denizalti: {
+    aciklama: 'Okyanusların derinliklerinde keşfedilmeyi bekleyen büyüleyici bir dünya var!',
+    kartlar: [
+      { gorsel: '🐋', baslik: 'Mavi Balina', bilgi: 'Mavi balina, gezegendeki en büyük canlıdır — dili bile bir filin ağırlığında olabilir!' },
+      { gorsel: '🦑', baslik: 'Dev Kalamar', bilgi: 'Dev kalamarlar bir otobüs kadar uzun olabilir ve okyanusun karanlık derinliklerinde yaşarlar.' },
+      { gorsel: '🐠', baslik: 'Mercan Resifleri', bilgi: 'Mercan resifleri aslında canlı organizmalardır ve binlerce deniz canlısına ev sahipliği yapar.' },
+      { gorsel: '💡', baslik: 'Işıldayan Canlılar', bilgi: 'Bazı derin deniz canlıları kendi ışıklarını üretebilir; buna biyolüminesans denir.' },
+      { gorsel: '🏔️', baslik: 'Mariana Çukuru', bilgi: 'Okyanusun en derin noktasıdır — Everest Dağı oraya konsa bile zirvesi su yüzeyine ulaşamazdı.' },
+      { gorsel: '🐢', baslik: 'Deniz Kaplumbağaları', bilgi: 'Deniz kaplumbağaları yumurtlamak için doğdukları sahile geri döner; bu yolculuk binlerce kilometre olabilir.' },
+    ],
+  },
+};
+
+function ulkeleriGoster() {
+  const alan = document.getElementById('atlas-ulkeler');
+  if (!alan) return;
+
+  alan.innerHTML = ULKELER.map((u, i) => `
+    <div class="ulkeKart">
+      <div class="ulkeUst">
+        <span class="ulkeGorsel">${u.gorsel}</span>
+        <div>
+          <h3>${u.bayrak} ${escapeHtml(u.ad)}</h3>
+          <span class="ulkeAltbilgi">${escapeHtml(u.baskent)} · ${escapeHtml(u.kita)}</span>
+        </div>
+      </div>
+      <div class="ulkeDetay">
+        <div class="ulkeOzellik"><strong>📍 ${escapeHtml(u.mekan.ad)}</strong><span>${escapeHtml(u.mekan.bilgi)}</span></div>
+        <div class="ulkeOzellik"><strong>${u.hayvan.emoji} ${escapeHtml(u.hayvan.ad)}</strong><span>${escapeHtml(u.hayvan.bilgi)}</span></div>
+      </div>
+      <div class="ulkeNot">💡 ${escapeHtml(u.bilgiNotu)}</div>
+      <button class="ulkeDetayBtn" data-tip="ulke" data-index="${i}" type="button">🔎 Sayfasını Aç</button>
+    </div>
+  `).join('');
+}
+
+// Türkiye'nin kendi şehir/bölge atlası — aynı kart yapısını kullanır,
+// yeni bir şehir eklemek için sadece TURKIYE_SEHIRLERI dizisine ekleme yapmak yeterlidir.
+const TURKIYE_SEHIRLERI = [
+  {
+    gorsel: '🕌', ad: 'İstanbul', bolge: 'Marmara Bölgesi',
+    mekan: { ad: 'Ayasofya', bilgi: 'Önce kilise, sonra cami, şimdi hem cami hem müze olarak ziyaret edilen muhteşem bir tarihi yapıdır.' },
+    hayvan: { emoji: '🐬', ad: 'Boğaz Yunusları', bilgi: 'İstanbul Boğazı\'nda zaman zaman yunusların suda oynadığı görülebilir.' },
+    bilgiNotu: 'İstanbul, dünyada iki kıtaya (Asya ve Avrupa) birden yayılan tek büyük şehirdir!',
+  },
+  {
+    gorsel: '🏛️', ad: 'Ankara', bolge: 'İç Anadolu Bölgesi',
+    mekan: { ad: 'Anıtkabir', bilgi: 'Atatürk\'ün anıt mezarıdır; görkemli sütunları ve geniş meydanıyla bilinir.' },
+    hayvan: { emoji: '🐐', ad: 'Ankara Keçisi', bilgi: 'Yumuşacık ve parlak tiftik yünüyle tanınan özel bir keçi türüdür.' },
+    bilgiNotu: 'Ankara, Türkiye Cumhuriyeti\'nin başkentidir.',
+  },
+  {
+    gorsel: '🎈', ad: 'Kapadokya (Nevşehir)', bolge: 'İç Anadolu Bölgesi',
+    mekan: { ad: 'Peribacaları', bilgi: 'Rüzgar ve suyun binlerce yılda şekillendirdiği sivri, ilginç kaya sütunlarıdır.' },
+    hayvan: { emoji: '🦉', ad: 'Puhu Kuşu', bilgi: 'Kayalık vadilerde yaşayan, büyük gözleriyle dikkat çeken bir baykuş türüdür.' },
+    bilgiNotu: 'Kapadokya\'nın altında koca yer altı şehirleri vardır — eskiden insanlar buralara sığınırmış!',
+  },
+  {
+    gorsel: '🏖️', ad: 'Antalya', bolge: 'Akdeniz Bölgesi',
+    mekan: { ad: 'Düden Şelalesi', bilgi: 'Bir kısmı doğrudan denize dökülen, seyretmesi büyüleyici bir şelaledir.' },
+    hayvan: { emoji: '🐢', ad: 'Caretta Caretta', bilgi: 'Antalya sahillerine yumurtlamaya gelen, nesli korunması gereken bir deniz kaplumbağasıdır.' },
+    bilgiNotu: 'Antalya, Türkiye\'nin en güneşli günü olan şehirlerinden biridir.',
+  },
+  {
+    gorsel: '🍵', ad: 'Rize', bolge: 'Karadeniz Bölgesi',
+    mekan: { ad: 'Çay Bahçeleri', bilgi: 'Yemyeşil tepelere sıra sıra dizilmiş çay tarlaları Rize\'nin simgesidir.' },
+    hayvan: { emoji: '🐝', ad: 'Kafkas Arısı', bilgi: 'Karadeniz\'e özgü, lezzetli bal üreten çalışkan bir arı türüdür.' },
+    bilgiNotu: 'Türkiye, dünyanın en çok çay tüketen ülkelerinden biridir!',
+  },
+  {
+    gorsel: '🏺', ad: 'İzmir', bolge: 'Ege Bölgesi',
+    mekan: { ad: 'Efes Antik Kenti', bilgi: 'Antik çağın en görkemli şehirlerinden biriydi; Celsus Kütüphanesi\'nin cephesi hâlâ ayaktadır.' },
+    hayvan: { emoji: '🐟', ad: 'Ege Balıkları', bilgi: 'Ege Denizi; çipura, levrek gibi pek çok balık türüne ev sahipliği yapar.' },
+    bilgiNotu: 'İzmir, Türkiye\'nin en eski yerleşim yerlerinden birine sahiptir.',
+  },
+  {
+    gorsel: '🕋', ad: 'Mardin', bolge: 'Güneydoğu Anadolu Bölgesi',
+    mekan: { ad: 'Taş Evler', bilgi: 'Sarımsı taşlardan yapılmış, yamaca basamak basamak dizilmiş tarihi evleriyle ünlüdür.' },
+    hayvan: { emoji: '🦎', ad: 'Bölge Kertenkeneleri', bilgi: 'Sıcak ikliminde birçok farklı sürüngen türü yaşar.' },
+    bilgiNotu: 'Mardin\'in tarihi çarşısında yüzyıllardır bakırcılık gibi eski zanaatlar sürdürülür.',
+  },
+  {
+    gorsel: '🌹', ad: 'Konya', bolge: 'İç Anadolu Bölgesi',
+    mekan: { ad: 'Mevlana Türbesi', bilgi: 'Ünlü şair ve düşünür Mevlana\'nın anısına yapılmış, yeşil kubbesiyle tanınan tarihi bir yapıdır.' },
+    hayvan: { emoji: '🐑', ad: 'Karaman Koyunu', bilgi: 'Bölgede yaygın olarak yetiştirilen dayanıklı bir koyun türüdür.' },
+    bilgiNotu: 'Konya, Türkiye\'nin en geniş tahıl ovalarından bazılarına sahiptir.',
+  },
+];
+
+function turkiyeSehirleriniGoster() {
+  const alan = document.getElementById('atlas-turkiye');
+  if (!alan) return;
+
+  alan.innerHTML = TURKIYE_SEHIRLERI.map((s, i) => `
+    <div class="ulkeKart">
+      <div class="ulkeUst">
+        <span class="ulkeGorsel">${s.gorsel}</span>
+        <div>
+          <h3>🇹🇷 ${escapeHtml(s.ad)}</h3>
+          <span class="ulkeAltbilgi">${escapeHtml(s.bolge)}</span>
+        </div>
+      </div>
+      <div class="ulkeDetay">
+        <div class="ulkeOzellik"><strong>📍 ${escapeHtml(s.mekan.ad)}</strong><span>${escapeHtml(s.mekan.bilgi)}</span></div>
+        <div class="ulkeOzellik"><strong>${s.hayvan.emoji} ${escapeHtml(s.hayvan.ad)}</strong><span>${escapeHtml(s.hayvan.bilgi)}</span></div>
+      </div>
+      <div class="ulkeNot">💡 ${escapeHtml(s.bilgiNotu)}</div>
+      <button class="ulkeDetayBtn" data-tip="sehir" data-index="${i}" type="button">🔎 Sayfasını Aç</button>
+    </div>
+  `).join('');
+}
+
+function bilimDunyasiniGoster() {
+  Object.entries(BILIM_DUNYASI).forEach(([anahtar, bolum]) => {
+    const alan = document.getElementById(`atlas-${anahtar}`);
+    if (!alan) return;
+
+    alan.innerHTML = `
+      <p class="aciklamaMetni">${escapeHtml(bolum.aciklama)}</p>
+      <div class="bilimGrid">
+        ${bolum.kartlar.map(k => `
+          <div class="bilimKart">
+            <div class="bilimGorsel">${k.gorsel}</div>
+            <h4>${escapeHtml(k.baslik)}</h4>
+            <p>${escapeHtml(k.bilgi)}</p>
+          </div>
+        `).join('')}
       </div>
     `;
-    grid.appendChild(card);
   });
-  panel.appendChild(grid);
-
-  // ---- event wiring ----
-  grid.querySelectorAll('input[data-act="toggle"]').forEach(cb => {
-    cb.addEventListener("change", () => {
-      toggleMacroItem(cb.dataset.cat, Number(cb.dataset.id), cb.checked);
-    });
-  });
-  grid.querySelectorAll('input[data-act="date"]').forEach(inp => {
-    inp.addEventListener("change", () => {
-      setMacroDate(inp.dataset.cat, Number(inp.dataset.id), inp.value);
-    });
-  });
-  grid.querySelectorAll('button[data-act="del"]').forEach(btn => {
-    btn.addEventListener("click", () => {
-      deleteMacroItem(btn.dataset.cat, Number(btn.dataset.id));
-    });
-  });
-  grid.querySelectorAll('button[data-act="add"]').forEach(btn => {
-    btn.addEventListener("click", () => {
-      const cat = btn.dataset.cat;
-      const input = grid.querySelector(`.macro-add-input[data-cat="${cat}"]`);
-      const isim = input.value.trim();
-      if(!isim) return;
-      addMacroItem(cat, isim);
-    });
-  });
-
-  return panel;
 }
 
-function findMacroCat(catKey){ return MACRO.categories.find(c=>c.key===catKey); }
-
-function toggleMacroItem(catKey, id, checked){
-  const cat = findMacroCat(catKey); if(!cat) return;
-  const item = cat.items.find(i=>i.id===id); if(!item) return;
-  item.incelendi = checked;
-  if(checked && !item.tarih) item.tarih = new Date().toISOString().slice(0,10);
-  if(!checked) item.tarih = null;
-  saveState();
-  renderMain();
-}
-function setMacroDate(catKey, id, tarih){
-  const cat = findMacroCat(catKey); if(!cat) return;
-  const item = cat.items.find(i=>i.id===id); if(!item) return;
-  item.tarih = tarih;
-  saveState();
-  renderMain();
-}
-function deleteMacroItem(catKey, id){
-  const cat = findMacroCat(catKey); if(!cat) return;
-  if(!confirm("Bu göstergeyi silmek istediğinize emin misiniz?")) return;
-  cat.items = cat.items.filter(i=>i.id!==id);
-  saveState();
-  renderMain();
-}
-function addMacroItem(catKey, isim){
-  const cat = findMacroCat(catKey); if(!cat) return;
-  cat.items.push({id:macroNextId++, isim, incelendi:false, tarih:null});
-  saveState();
-  renderMain();
+function atlasSekmesiGoster(sekme) {
+  document.querySelectorAll('.atlasSekmeBtn').forEach(b => b.classList.toggle('aktif', b.dataset.sekme === sekme));
+  document.querySelectorAll('.atlasIcerik').forEach(i => {
+    i.style.display = i.id === `atlas-${sekme}` ? 'block' : 'none';
+  });
 }
 
-/* ============================= INIT ============================= */
-loadState();
-renderMain();
-pullFromCloud(true).then(ok => { if(ok) renderMain(); });
+document.querySelectorAll('.atlasSekmeBtn').forEach(btn => {
+  btn.addEventListener('click', () => atlasSekmesiGoster(btn.dataset.sekme));
+});
+
+// ------------------------------------------------------------
+// ATLAS DETAY PENCERESİ — bir karta basınca büyük "sayfa" gibi açılır
+// ------------------------------------------------------------
+function atlasDetayAc(baslik, altbilgi, gorsel, mekan, hayvan, not) {
+  const modal = document.getElementById('atlasModal');
+  const icerik = document.getElementById('atlasModalIcerik');
+  if (!modal || !icerik) return;
+
+  icerik.innerHTML = `
+    <div class="atlasModalUst">
+      <span class="atlasModalGorsel">${gorsel}</span>
+      <div>
+        <h2>${escapeHtml(baslik)}</h2>
+        <span class="ulkeAltbilgi">${escapeHtml(altbilgi)}</span>
+      </div>
+    </div>
+    <div class="ulkeDetay">
+      <div class="ulkeOzellik"><strong>📍 ${escapeHtml(mekan.ad)}</strong><span>${escapeHtml(mekan.bilgi)}</span></div>
+      <div class="ulkeOzellik"><strong>${hayvan.emoji} ${escapeHtml(hayvan.ad)}</strong><span>${escapeHtml(hayvan.bilgi)}</span></div>
+    </div>
+    <div class="ulkeNot">💡 ${escapeHtml(not)}</div>
+  `;
+
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function atlasModalKapat() {
+  const modal = document.getElementById('atlasModal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('click', e => {
+  const detayBtn = e.target.closest('.ulkeDetayBtn');
+  if (detayBtn) {
+    const tip = detayBtn.dataset.tip;
+    const idx = Number(detayBtn.dataset.index);
+    const kaynak = tip === 'sehir' ? TURKIYE_SEHIRLERI : ULKELER;
+    const veri = kaynak[idx];
+    if (!veri) return;
+    const baslik = tip === 'sehir' ? veri.ad : `${veri.bayrak} ${veri.ad}`;
+    const altbilgi = tip === 'sehir' ? veri.bolge : `${veri.baskent} · ${veri.kita}`;
+    atlasDetayAc(baslik, altbilgi, veri.gorsel, veri.mekan, veri.hayvan, veri.bilgiNotu);
+    return;
+  }
+  if (e.target.closest('#atlasModalKapat') || e.target.id === 'atlasModal') {
+    atlasModalKapat();
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') atlasModalKapat();
+});
+
+// Atlas içeriği okuma verisinden bağımsız statik içeriktir — sayfa yüklenince bir kez oluşturulur.
+ulkeleriGoster();
+turkiyeSehirleriniGoster();
+bilimDunyasiniGoster();
+
+// ============================================================
+// ANA SEKMELER (Panom / Kaşifler / Uçuş Günlüğü / Yıldız Kütüphanesi /
+// Kargo Ambarı / Ödüller / Atlas) — sayfayı derli toplu tutmak için
+// tüm bölümler artık sekme sekme açılıyor, hepsi aynı anda alt alta
+// durmuyor. Atlas'ın kendi iç sekmeleri (.atlasSekmeBtn) bundan ayrı
+// ve bağımsız çalışmaya devam ediyor.
+// ============================================================
+function anaSekmesiGoster(sekme) {
+  document.querySelectorAll('.anaSekmeBtn').forEach(b => b.classList.toggle('aktif', b.dataset.anasekme === sekme));
+  document.querySelectorAll('.anaSekmeIcerik').forEach(i => {
+    i.style.display = i.id === `anasekme-${sekme}` ? 'block' : 'none';
+  });
+}
+
+document.querySelectorAll('.anaSekmeBtn').forEach(btn => {
+  btn.addEventListener('click', () => anaSekmesiGoster(btn.dataset.anasekme));
+});
