@@ -495,9 +495,15 @@ function kisiIstatistikleri(isim) {
   const kayitlarim = kayitlar.filter(k => k.kisi === isim);
   const toplamSayfa = kayitlarim.reduce((t, k) => t + Number(k.okunanSayfa || 0), 0);
 
+  // Kitap adı büyük/küçük harf veya baş-son boşluk farkıyla yazılmış olabilir
+  // (örn. "Küçük Prens" / "küçük prens"). Bunları aynı kitap say, ilk yazılan
+  // hâlini görünen isim olarak kullan — yoksa sayfalar iki ayrı kitaba
+  // bölünüp kitap hiç "tamamlandı" görünmeyebilir.
+  const normalizeAd = s => String(s || '').trim().toLocaleLowerCase('tr');
+
   const kitaplarMap = {};
   kayitlarim.forEach(k => {
-    const anahtar = k.kitap;
+    const anahtar = normalizeAd(k.kitap);
     if (!kitaplarMap[anahtar]) {
       kitaplarMap[anahtar] = { kitap: k.kitap, yazar: k.yazar, toplamSayfa: 0, okunan: 0, sonTarih: k.tarih || '' };
     }
