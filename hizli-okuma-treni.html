@@ -508,13 +508,23 @@
   let soundOn = true;
   function ensureAudio(){
     if(!audioCtx){
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch(e){ audioCtx = null; }
     }
-    if(audioCtx.state === 'suspended') audioCtx.resume();
+    if(audioCtx && audioCtx.state === 'suspended'){
+      audioCtx.resume().catch(()=>{});
+    }
   }
+  // Bu sayfa ana uygulamada bir iframe içinde açılıyor; kendi bağımsız ses
+  // kilidi var. Sayfadaki ilk dokunuşta/tıklamada erkenden açmayı dene ki
+  // "Başlat" butonuna basılana kadar beklemesin.
+  document.addEventListener('pointerdown', ensureAudio, { capture: true });
+  document.addEventListener('keydown', ensureAudio, { capture: true });
+
   function playTick(){
     if(!soundOn) return;
     ensureAudio();
+    if(!audioCtx) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'sine';
