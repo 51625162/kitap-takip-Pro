@@ -267,9 +267,19 @@ function sesBaglaminiAl() {
 // Bazı sesler (örn. yeni evrim kutlaması) doğrudan bir tıklamadan değil,
 // ekran güncellenirken kendiliğinden tetiklenebiliyor — özellikle sayfa zaten
 // girişliyken yeniden açıldığında. Bunu önlemek için sayfadaki ilk dokunuşta/
-// tıklamada ses altyapısının kilidini erkenden açıyoruz.
-document.addEventListener('pointerdown', sesBaglaminiAl, { capture: true });
-document.addEventListener('keydown', sesBaglaminiAl, { capture: true });
+// tıklamada ses altyapısının kilidini erkenden açıyoruz. Kilit ilk kez
+// açıldığında, daha önce (ses kilidi kapalıyken) sessizce atlanmış olabilecek
+// kutlama seslerini yakalamak için kişi kartlarını bir kez daha tazeliyoruz.
+let sesKilidiAcikMi = false;
+function sesKilidiniDenemeyeCalis() {
+  const ctx = sesBaglaminiAl();
+  if (ctx && ctx.state === 'running' && !sesKilidiAcikMi) {
+    sesKilidiAcikMi = true;
+    if (typeof kisiKartlariniOlustur === 'function') kisiKartlariniOlustur();
+  }
+}
+document.addEventListener('pointerdown', sesKilidiniDenemeyeCalis, { capture: true });
+document.addEventListener('keydown', sesKilidiniDenemeyeCalis, { capture: true });
 
 function tonCal(frekans, sure, tur = 'sine', gecikme = 0, sesSeviyesi = 0.2) {
   const ctx = sesBaglaminiAl();
@@ -599,11 +609,17 @@ function kisiKartlariniOlustur() {
       const oncekiEsik = EVRIM_ESIKLERI[asama];
       const efsaneMi = asama === EVRIM_ESIKLERI.length - 1;
 
-      // Yeni bir evrim aşamasına ilk kez ulaşıldığında kutlama sesi çal
+      // Yeni bir evrim aşamasına ilk kez ulaşıldığında kutlama sesi çal.
+      // Sesi yalnızca ses altyapısı gerçekten çalışır durumdaysa "gösterildi"
+      // say — yoksa tarayıcı otomatik oynatmayı engellediğinde ses sessizce
+      // kaybolur ve bir daha hiç çalınmazdı.
       if ((evrimGosterildi[isim] ?? -1) < asama) {
-        evrimGosterildi[isim] = asama;
-        kaydetEvrimGosterildi();
-        setTimeout(() => hayvanSesiCal(evcilHayvanlar[isim], asama), 300);
+        const sesCtx = sesBaglaminiAl();
+        if (sesCtx && sesCtx.state === 'running') {
+          evrimGosterildi[isim] = asama;
+          kaydetEvrimGosterildi();
+          setTimeout(() => hayvanSesiCal(evcilHayvanlar[isim], asama), 300);
+        }
       }
 
       hayvanHtml = `
