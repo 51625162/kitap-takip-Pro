@@ -737,15 +737,20 @@ if (kisiKartlariAlani) {
     if (onizlemeBtn) hayvanSesiCal(onizlemeBtn.dataset.tur, onizlemeBtn.dataset.asama);
 
     if (hayvanEmoji) {
-      hayvanSesiCal(hayvanEmoji.dataset.tur, hayvanEmoji.dataset.asama);
-      hayvanEmoji.classList.remove('sevinc');
-      // Yeniden başlatmak için bir sonraki karede tekrar ekle (aynı animasyon üst üste tetiklenebilsin diye)
+      const dokunulanTur = hayvanEmoji.dataset.tur;
+      hayvanSesiCal(dokunulanTur, hayvanEmoji.dataset.asama);
+      hayvanEmoji.classList.remove('sevinc', 'kanatCirp');
+      // Her dokunuşta animasyonu yeniden başlat.
       void hayvanEmoji.offsetWidth;
       hayvanEmoji.classList.add('sevinc');
+      if (dokunulanTur === 'kus') hayvanEmoji.classList.add('kanatCirp');
       hayvanEmoji.addEventListener('animationend', function temizle(ev) {
-        if (ev.animationName === 'hayvanSevinc') {
-          hayvanEmoji.classList.remove('sevinc');
-          hayvanEmoji.removeEventListener('animationend', temizle);
+        if (['hayvanSevinc', 'kanatCirpma'].includes(ev.animationName)) {
+          if (ev.animationName === 'hayvanSevinc') hayvanEmoji.classList.remove('sevinc');
+          if (ev.animationName === 'kanatCirpma') hayvanEmoji.classList.remove('kanatCirp');
+          if (!hayvanEmoji.classList.contains('sevinc') && !hayvanEmoji.classList.contains('kanatCirp')) {
+            hayvanEmoji.removeEventListener('animationend', temizle);
+          }
         }
       });
     }
