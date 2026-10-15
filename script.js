@@ -674,7 +674,7 @@ function kisiKartlariniOlustur() {
 
       hayvanHtml = `
         <div class="hayvanKart ${efsaneMi ? 'efsanevi' : ''}">
-          <div class="hayvanEmoji hayvanAsama${asama} tiklanabilir ${efsaneMi && ['kedi', 'kurt'].includes(evcilHayvanlar[isim]) ? 'hayvanResimli' : ''}" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}" title="Dokun, dostunla oyna!">${efsaneMi && evcilHayvanlar[isim] === 'kedi' ? '<img src="images/efsanevi-altin-aslan.svg" alt="Efsanevi Altın Kanatlı Aslan" class="hayvanKarakterResmi">' : efsaneMi && evcilHayvanlar[isim] === 'kurt' ? '<img src="images/efsanevi-ay-kurdu.svg" alt="Efsanevi Ay Kurdu" class="hayvanKarakterResmi">' : mevcut.emoji}</div>
+          <div class="hayvanEmoji hayvanAsama${asama} tiklanabilir ${efsaneMi && ['kedi', 'kurt', 'kus'].includes(evcilHayvanlar[isim]) ? 'hayvanResimli' : ''}" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}" title="Dokun, dostunla oyna!">${efsaneMi && evcilHayvanlar[isim] === 'kedi' ? '<img src="images/efsanevi-altin-aslan.svg" alt="Efsanevi Altın Kanatlı Aslan" class="hayvanKarakterResmi">' : efsaneMi && evcilHayvanlar[isim] === 'kurt' ? '<img src="images/efsanevi-ay-kurdu.svg" alt="Efsanevi Ay Kurdu" class="hayvanKarakterResmi">' : efsaneMi && evcilHayvanlar[isim] === 'kus' ? '<img src="images/efsanevi-anka-kusu.svg" alt="Efsanevi Anka Kuşu" class="hayvanKarakterResmi">' : mevcut.emoji}</div>
           <div class="hayvanAd">${escapeHtml(mevcut.ad)}</div>
           <button class="hayvanSesBtn" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}">🔊 Sesini Dinle</button>
 
