@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 620" role="img" aria-labelledby="title">
+<title id="title">Efsanevi Ay Kurdu</title>
+<defs>
+ <linearGradient id="fur" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eef7ff"/><stop offset=".25" stop-color="#647a9f"/><stop offset=".55" stop-color="#24243d"/><stop offset=".8" stop-color="#593a77"/><stop offset="1" stop-color="#111526"/></linearGradient>
+ <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b8ffff"/><stop offset=".5" stop-color="#26cfff"/><stop offset="1" stop-color="#6d4aff"/></linearGradient>
+ <linearGradient id="moon" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".45" stop-color="#d8e9ff"/><stop offset="1" stop-color="#7899d8"/></linearGradient>
+ <radialGradient id="aura"><stop stop-color="#429cff" stop-opacity=".35"/><stop offset="1" stop-color="#3a4bff" stop-opacity="0"/></radialGradient>
+</defs>
+<ellipse cx="260" cy="540" rx="150" ry="28" fill="#1b2b52" opacity=".3"/>
+<circle cx="245" cy="235" r="220" fill="url(#aura)"/>
+<path d="M190 365 A170 170 0 1 1 334 390 A135 135 0 0 0 190 365Z" fill="url(#moon)" stroke="#f4fbff" stroke-width="5"/>
+<path d="M88 140 Q112 93 147 80 M110 170 Q140 134 166 128 M352 107 Q385 130 399 165" fill="none" stroke="#fff" stroke-width="4" opacity=".8"/>
+<!-- tail -->
+<path d="M194 383 Q128 407 117 465 Q111 494 75 482 Q54 475 45 450 Q68 476 87 454 Q107 420 141 394 L173 354Z" fill="url(#fur)" stroke="#19223f" stroke-width="5"/>
+<path d="M116 453 Q88 470 60 448 Q77 480 99 477 Q119 475 130 449Z" fill="url(#blue)"/>
+<!-- rear leg -->
+<path d="M202 365 Q170 399 176 452 L149 515 Q140 536 159 543 L190 541 Q210 527 217 493 L251 423Z" fill="url(#fur)" stroke="#161a31" stroke-width="5"/>
+<path d="M149 515 Q135 532 146 545 L191 545 L199 534 L184 526Z" fill="#23263f" stroke="#0c1328" stroke-width="4"/>
+<!-- torso raised upright -->
+<path d="M194 285 Q231 255 274 285 Q320 320 313 384 Q308 431 278 465 L228 461 Q202 430 195 394 Q174 344 194 285Z" fill="url(#fur)" stroke="#171b32" stroke-width="6"/>
+<!-- chest fur streaks -->
+<path d="M218 282 L239 321 L224 336 L249 357 L232 371 L264 401 L251 420 L279 444" fill="none" stroke="url(#blue)" stroke-width="13" stroke-linecap="round"/>
+<path d="M199 308 L180 336 L208 333 L190 360 L218 355 M288 317 L309 341 L283 340 L305 365 L276 360" fill="none" stroke="#8cecff" stroke-width="8" stroke-linejoin="round"/>
+<!-- front legs lifted -->
+<path d="M243 346 Q215 378 221 418 L206 456 Q202 470 218 476 L239 471 L256 425 Q273 393 271 364Z" fill="url(#fur)" stroke="#171b32" stroke-width="5"/>
+<path d="M288 340 Q314 364 302 405 L295 448 Q292 465 308 471 L328 466 L342 419 Q357 373 326 339Z" fill="url(#fur)" stroke="#171b32" stroke-width="5"/>
+<path d="M207 455 l-8 18 12 11 26-5 5-10-16 1Z M295 448 l-5 19 12 12 26-7 4-10-18 3Z" fill="#14192e" stroke="#090f20" stroke-width="4"/>
+<!-- neck and mane -->
+<path d="M191 271 L165 241 L193 244 L177 211 L209 224 L207 190 L235 215 L252 179 L268 214 L299 195 L293 230 L325 225 L304 252 L320 275 L296 297 L278 321 L248 304 L222 323 L207 296 L178 294Z" fill="url(#fur)" stroke="#151a31" stroke-width="5"/>
+<path d="M192 252 L218 268 L207 283 L235 290 L224 307 M224 226 L244 252 L235 269 M273 220 L263 252 L286 262 L271 281 L296 286" fill="none" stroke="url(#blue)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- head and ears -->
+<path d="M207 227 L196 176 L230 202 Q250 185 275 201 L303 168 L298 226 Q287 251 254 260 Q222 253 207 227Z" fill="url(#fur)" stroke="#151a31" stroke-width="5"/>
+<path d="M204 187 L201 169 L222 203Z M284 199 L300 176 L294 211Z" fill="#8deaff"/>
+<!-- muzzle raised -->
+<path d="M238 215 Q252 193 273 193 L294 168 L309 174 L297 202 Q287 228 265 233 L249 229Z" fill="#c7d5e8" stroke="#171a30" stroke-width="4"/>
+<path d="M283 178 Q294 170 302 174 L298 184Z" fill="#0c1021"/>
+<path d="M268 199 Q278 190 285 195" fill="none" stroke="#161629" stroke-width="4"/>
+<path d="M242 218 Q254 213 263 220" fill="none" stroke="#131629" stroke-width="4"/>
+<path d="M221 221 Q235 208 246 220" fill="none" stroke="#101629" stroke-width="5"/>
+<ellipse cx="234" cy="220" rx="5" ry="7" fill="#39f2ff"/>
+<path d="M224 214 L238 210" stroke="#d9ffff" stroke-width="3"/>
+<!-- glow markings -->
+<g fill="#b9ffff"><path d="M108 225 l5 14 14 5-14 5-5 14-5-14-14-5 14-5z"/><path d="M386 275 l4 11 11 4-11 4-4 11-4-11-11-4 11-4z"/><circle cx="134" cy="315" r="5"/><circle cx="365" cy="355" r="4"/></g>
+</svg>
