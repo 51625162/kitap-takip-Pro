@@ -39,7 +39,7 @@ const HAYVAN_TURLERI = {
       { ad: 'Yavru Kedi', emoji: '🐱' },
       { ad: 'Genç Panter', emoji: '🐆' },
       { ad: 'Kaplan', emoji: '🐅' },
-      { ad: 'Efsanevi Altın Aslan', emoji: '🦁✨' },
+      { ad: 'Efsanevi Altın Aslan', emoji: '🦁' },
     ],
   },
   kertenkele: {
@@ -57,7 +57,7 @@ const HAYVAN_TURLERI = {
       { ad: 'Kurt Yavrusu', emoji: '🐺' },
       { ad: 'Genç Kurt', emoji: '🐺' },
       { ad: 'Kutup Kurdu', emoji: '🐺' },
-      { ad: 'Efsanevi Ay Kurdu', emoji: '🐺🌙' },
+      { ad: 'Efsanevi Ay Kurdu', emoji: '🐺' },
     ],
   },
   kus: {
