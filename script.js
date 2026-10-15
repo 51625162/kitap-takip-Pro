@@ -674,7 +674,7 @@ function kisiKartlariniOlustur() {
 
       hayvanHtml = `
         <div class="hayvanKart ${efsaneMi ? 'efsanevi' : ''}">
-          <div class="hayvanEmoji hayvanAsama${asama} tiklanabilir" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}" title="Dokun, dostunla oyna!">${mevcut.emoji}</div>
+          <div class="hayvanEmoji hayvanAsama${asama} tiklanabilir ${efsaneMi && evcilHayvanlar[isim] === 'kedi' ? 'hayvanResimli' : ''}" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}" title="Dokun, dostunla oyna!">${efsaneMi && evcilHayvanlar[isim] === 'kedi' ? '<img src="images/efsanevi-altin-aslan.svg" alt="Efsanevi Altın Kanatlı Aslan" class="hayvanKarakterResmi">' : mevcut.emoji}</div>
           <div class="hayvanAd">${escapeHtml(mevcut.ad)}</div>
           <button class="hayvanSesBtn" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}">🔊 Sesini Dinle</button>
 
