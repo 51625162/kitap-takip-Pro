@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" role="img" aria-labelledby="title">
+<title id="title">Efsanevi Altın Kanatlı Aslan</title>
+<defs>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff4a3"/><stop offset=".35" stop-color="#ffca38"/><stop offset=".7" stop-color="#e87916"/><stop offset="1" stop-color="#9b4211"/></linearGradient>
+ <linearGradient id="wing" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#fff7bd"/><stop offset=".4" stop-color="#ffbd45"/><stop offset="1" stop-color="#c65318"/></linearGradient>
+ <linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f8d27a"/><stop offset="1" stop-color="#a95a24"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#ffed8b" stop-opacity=".7"/><stop offset="1" stop-color="#ffb52b" stop-opacity="0"/></radialGradient>
+</defs>
+<ellipse cx="250" cy="450" rx="180" ry="22" fill="#8a4b21" opacity=".18"/>
+<circle cx="250" cy="220" r="215" fill="url(#glow)"/>
+<!-- wings, fully visible -->
+<g stroke="#a64a18" stroke-width="3" stroke-linejoin="round">
+ <path fill="url(#wing)" d="M218 235 C169 196 110 126 25 53 C32 102 52 144 83 178 C48 157 27 135 9 106 C15 160 48 204 99 227 C65 220 42 208 24 191 C48 242 99 272 159 278 L221 286Z"/>
+ <path fill="url(#wing)" d="M282 235 C331 196 390 126 475 53 C468 102 448 144 417 178 C452 157 473 135 491 106 C485 160 452 204 401 227 C435 220 458 208 476 191 C452 242 401 272 341 278 L279 286Z"/>
+ <g fill="none" stroke="#fff0a0" stroke-width="5" opacity=".9">
+  <path d="M211 245 Q115 166 35 75"/><path d="M200 257 Q110 205 57 154"/><path d="M186 268 Q111 242 56 213"/>
+  <path d="M289 245 Q385 166 465 75"/><path d="M300 257 Q390 205 443 154"/><path d="M314 268 Q389 242 444 213"/>
+ </g>
+</g>
+<!-- tail -->
+<path d="M158 337 C109 366 91 399 62 390 C45 384 51 360 69 360 C84 361 85 376 74 381" fill="none" stroke="#b46a2b" stroke-width="13" stroke-linecap="round"/>
+<path d="M61 389 l-21 12 6-24 19-11z" fill="#9d4218"/>
+<!-- body and legs -->
+<path d="M159 279 C181 253 220 253 260 267 C300 251 343 269 359 300 L342 347 C330 360 309 357 294 347 L210 350 C187 355 164 344 151 326Z" fill="url(#body)" stroke="#884117" stroke-width="4"/>
+<path d="M180 318 L171 402 Q170 420 188 420 L207 420 L218 350Z" fill="url(#body)" stroke="#884117" stroke-width="4"/>
+<path d="M224 337 L222 405 Q221 422 239 422 L258 422 L259 343Z" fill="url(#body)" stroke="#884117" stroke-width="4"/>
+<path d="M298 335 L302 405 Q303 422 321 421 L339 420 L331 343Z" fill="url(#body)" stroke="#884117" stroke-width="4"/>
+<path d="M333 315 L345 398 Q349 418 366 414 L381 408 L359 304Z" fill="url(#body)" stroke="#884117" stroke-width="4"/>
+<g fill="#f6d38b" stroke="#884117" stroke-width="3"><path d="M170 408 h38 q9 0 8 11 l-2 8 h-46z"/><path d="M220 408 h39 q9 0 8 11 l-2 8 h-46z"/><path d="M301 407 h37 q9 0 8 11 l-2 8 h-45z"/><path d="M346 400 h36 q9 0 9 11 l-3 8 h-42z"/></g>
+<!-- mane -->
+<path d="M203 192 L182 166 L207 168 L198 140 L226 154 L237 126 L252 151 L272 127 L280 156 L308 143 L302 171 L328 171 L313 195 L329 218 L311 239 L319 264 L290 271 L272 291 L247 279 L224 292 L208 269 L183 262 L192 237 L174 218Z" fill="url(#gold)" stroke="#8b3e10" stroke-width="5"/>
+<!-- face -->
+<path d="M218 178 Q250 157 282 178 L293 216 Q285 246 250 255 Q215 246 207 216Z" fill="#e9b66b" stroke="#713816" stroke-width="4"/>
+<path d="M218 193 Q231 184 242 195" fill="none" stroke="#55301c" stroke-width="5" stroke-linecap="round"/>
+<path d="M258 195 Q270 184 282 193" fill="none" stroke="#55301c" stroke-width="5" stroke-linecap="round"/>
+<ellipse cx="232" cy="199" rx="5" ry="7" fill="#241a12"/><ellipse cx="268" cy="199" rx="5" ry="7" fill="#241a12"/>
+<path d="M239 216 Q250 208 261 216 L250 226Z" fill="#3c2018"/>
+<path d="M250 226 Q245 239 235 235 M250 226 Q255 239 265 235" fill="none" stroke="#6e321c" stroke-width="3" stroke-linecap="round"/>
+<path d="M211 183 Q232 164 247 176 M253 176 Q270 164 289 183" fill="none" stroke="#fff0a0" stroke-width="5" stroke-linecap="round"/>
+<!-- chest tufts -->
+<path d="M226 249 L237 270 L250 254 L264 273 L278 247 L276 293 L250 310 L226 291Z" fill="url(#gold)" stroke="#8b3e10" stroke-width="3"/>
+<!-- magical sparks -->
+<g fill="#fff4a3"><path d="M95 93 l5 14 14 5-14 5-5 14-5-14-14-5 14-5z"/><path d="M406 96 l4 11 11 4-11 4-4 11-4-11-11-4 11-4z"/><circle cx="130" cy="145" r="4"/><circle cx="372" cy="146" r="4"/></g>
+</svg>
