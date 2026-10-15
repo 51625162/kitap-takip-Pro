@@ -352,7 +352,8 @@ const HAYVAN_SESLERI = {
 let sahinSesKaydi = null;
 
 async function hayvanSesiCal(tur, asama) {
-  // Genç Şahin için sentez yerine gerçek şahin ses kaydı (CC BY 3.0).
+  // Genç Şahin için önce gerçek kayıt denenir; bağlantı/oynatma hatasında
+  // sessiz kalmaması için Web Audio ile hazırlanmış yedek ses kullanılır.
   if (tur === 'kus') {
     try {
       if (!sahinSesKaydi) {
@@ -362,9 +363,25 @@ async function hayvanSesiCal(tur, asama) {
       sahinSesKaydi.pause();
       sahinSesKaydi.currentTime = 0;
       await sahinSesKaydi.play();
+      return;
     } catch (e) {
-      console.warn('Gerçek şahin sesi çalınamadı:', e);
-      if (typeof showToast === 'function') showToast('Şahin sesi yüklenemedi. İnternet bağlantını kontrol et.');
+      console.warn('Gerçek şahin sesi çalınamadı; yedek ses deneniyor:', e);
+      // İnternet veya harici ses sunucusu erişilemezse uygulama içi sesle devam et.
+      const ctx = sesBaglaminiAl();
+      const yedekSes = HAYVAN_SESLERI.kus;
+      if (ctx && yedekSes) {
+        try {
+          if (ctx.state !== 'running') await ctx.resume();
+          if (ctx.state === 'running') {
+            yedekSes(Math.max(0, Number(asama) || 0));
+            if (typeof showToast === 'function') showToast('Gerçek kayıt açılamadı; yedek şahin sesi çalındı.');
+            return;
+          }
+        } catch (yedekHata) {
+          console.warn('Yedek şahin sesi de çalınamadı:', yedekHata);
+        }
+      }
+      if (typeof showToast === 'function') showToast('Şahin sesi çalınamadı. Telefonun sesini ve internet bağlantını kontrol et.');
     }
     return;
   }
