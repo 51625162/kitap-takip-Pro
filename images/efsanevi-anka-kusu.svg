@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 620" role="img" aria-labelledby="title">
+<title id="title">Efsanevi Anka Kuşu</title>
+<defs>
+ <linearGradient id="fire" x1="0" y1="0" x2="0.8" y2="1"><stop stop-color="#fff9b0"/><stop offset=".22" stop-color="#ffcf39"/><stop offset=".52" stop-color="#ff5a13"/><stop offset=".78" stop-color="#c81720"/><stop offset="1" stop-color="#55102e"/></linearGradient>
+ <linearGradient id="feather" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff6a0"/><stop offset=".35" stop-color="#ff9e1b"/><stop offset=".7" stop-color="#ed2b18"/><stop offset="1" stop-color="#7d1231"/></linearGradient>
+ <radialGradient id="sun"><stop stop-color="#fff7ae" stop-opacity=".95"/><stop offset=".45" stop-color="#ff7c19" stop-opacity=".55"/><stop offset="1" stop-color="#ff3d12" stop-opacity="0"/></radialGradient>
+</defs>
+<circle cx="255" cy="280" r="235" fill="url(#sun)"/>
+<!-- sweeping fire wings -->
+<g stroke="#a92517" stroke-width="3" stroke-linejoin="round">
+ <path fill="url(#feather)" d="M238 275 Q176 225 110 142 Q72 94 36 31 Q91 66 127 105 Q88 48 82 18 Q139 70 165 120 Q147 62 158 39 Q198 105 216 161 L253 235Z"/>
+ <path fill="url(#feather)" d="M267 275 Q329 225 395 142 Q433 94 469 31 Q414 66 378 105 Q417 48 423 18 Q366 70 340 120 Q358 62 347 39 Q307 105 289 161 L252 235Z"/>
+ <g fill="none" stroke="#fff4a0" stroke-width="5" stroke-linecap="round">
+  <path d="M226 251 Q130 155 49 47"/><path d="M211 225 Q144 142 99 65"/><path d="M197 195 Q163 134 153 85"/>
+  <path d="M279 251 Q375 155 456 47"/><path d="M294 225 Q361 142 406 65"/><path d="M308 195 Q342 134 352 85"/>
+ </g>
+</g>
+<!-- long flowing tail feathers, full silhouette -->
+<g stroke="#b72b18" stroke-width="3" stroke-linecap="round">
+ <path fill="url(#feather)" d="M244 352 Q203 410 167 473 Q151 509 123 544 Q184 522 219 469 Q248 428 252 376Z"/>
+ <path fill="url(#feather)" d="M252 358 Q235 434 240 503 Q243 548 226 590 Q276 556 284 499 Q292 431 266 362Z"/>
+ <path fill="url(#feather)" d="M263 353 Q286 420 326 469 Q356 506 390 521 Q370 469 336 424 Q305 384 273 347Z"/>
+ <path fill="none" stroke="#ffe982" stroke-width="5" d="M241 375 Q205 463 145 521 M255 377 Q264 480 247 563 M272 370 Q310 454 366 493"/>
+</g>
+<!-- body -->
+<path d="M229 246 Q246 225 265 244 L285 300 Q286 339 264 371 L244 374 Q223 342 220 307Z" fill="url(#fire)" stroke="#8e1c21" stroke-width="5"/>
+<!-- neck plume -->
+<path d="M231 263 Q205 231 213 195 Q219 169 241 145 L244 194 L259 158 L262 205 L284 183 Q287 228 267 263Z" fill="url(#feather)" stroke="#a92517" stroke-width="4"/>
+<!-- head and beak -->
+<path d="M236 174 Q247 151 270 160 L286 177 L271 196 L248 196Z" fill="url(#feather)" stroke="#8e1c21" stroke-width="4"/>
+<path d="M272 177 L300 184 L276 193Z" fill="#ffdf61" stroke="#8e1c21" stroke-width="3"/>
+<circle cx="263" cy="174" r="5" fill="#fff9c4"/><circle cx="263" cy="174" r="2.5" fill="#251124"/>
+<!-- breast and feather details -->
+<path d="M232 258 L247 286 L234 304 L253 325 L245 347 L262 359 L275 330 L264 309 L278 286 L258 263Z" fill="#ffdc49" stroke="#a92517" stroke-width="3"/>
+<g fill="#ffb42e" stroke="#b42b1a" stroke-width="2">
+ <path d="M225 271 L203 287 L224 291Z"/><path d="M222 293 L200 314 L228 310Z"/><path d="M228 316 L211 339 L237 333Z"/>
+ <path d="M275 270 L299 286 L278 291Z"/><path d="M279 294 L302 314 L274 310Z"/><path d="M274 317 L291 340 L265 333Z"/>
+</g>
+<!-- fire sparks -->
+<g fill="#fff6b3"><path d="M104 275 l6 17 17 6-17 6-6 17-6-17-17-6 17-6z"/><path d="M388 248 l5 13 13 5-13 5-5 13-5-13-13-5 13-5z"/><circle cx="155" cy="344" r="5"/><circle cx="352" cy="365" r="4"/><circle cx="316" cy="118" r="5"/></g>
+</svg>
