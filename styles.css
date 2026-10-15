@@ -1029,3 +1029,7 @@ body.dark .atlasModalUst h2 { color: var(--yildiz); }
 /* Efsanevi aslan ve ay kurdu: büyük, tam karakter illüstrasyonları */
 .hayvanEmoji.hayvanResimli { display:block; width:min(100%,250px); margin:0 auto; font-size:initial; line-height:0; animation:hayvanSallan 2s ease-in-out infinite, hayvanParla 1.5s ease-in-out infinite alternate; }
 .hayvanKarakterResmi { display:block; width:100%; height:auto; max-height:290px; object-fit:contain; overflow:visible; }
+
+/* Efsanevi Anka Kuşu: tam boy alevli kuş illüstrasyonu */
+.hayvanEmoji.hayvanResimli { display:block; width:min(100%,250px); margin:0 auto; font-size:initial; line-height:0; animation:hayvanSallan 2s ease-in-out infinite, hayvanParla 1.5s ease-in-out infinite alternate; }
+.hayvanKarakterResmi { display:block; width:100%; height:auto; max-height:290px; object-fit:contain; overflow:visible; }
