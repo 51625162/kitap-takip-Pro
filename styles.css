@@ -1007,3 +1007,21 @@ body.dark .atlasModalUst h2 { color: var(--yildiz); }
   .anaSekmeIcerik { animation: none; }
   .atlasModalKutu { animation: none; }
 }
+
+/* Efsanevi Altın Aslan: tam vücut kanatlı karakter görseli */
+.hayvanEmoji.hayvanResimli {
+  display: block;
+  width: min(100%, 250px);
+  margin: 0 auto;
+  font-size: initial;
+  line-height: 0;
+  animation: hayvanSallan 2s ease-in-out infinite, hayvanParla 1.5s ease-in-out infinite alternate;
+}
+.hayvanKarakterResmi {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 250px;
+  object-fit: contain;
+  overflow: visible;
+}
