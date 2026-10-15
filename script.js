@@ -349,13 +349,30 @@ const HAYVAN_SESLERI = {
   },
 };
 
+let sahinSesKaydi = null;
+
 async function hayvanSesiCal(tur, asama) {
+  // Genç Şahin için sentez yerine gerçek şahin ses kaydı (CC BY 3.0).
+  if (tur === 'kus') {
+    try {
+      if (!sahinSesKaydi) {
+        sahinSesKaydi = new Audio('https://www.orangefreesounds.com/wp-content/uploads/2015/02/Hawk-sound.mp3');
+        sahinSesKaydi.preload = 'auto';
+      }
+      sahinSesKaydi.pause();
+      sahinSesKaydi.currentTime = 0;
+      await sahinSesKaydi.play();
+    } catch (e) {
+      console.warn('Gerçek şahin sesi çalınamadı:', e);
+      if (typeof showToast === 'function') showToast('Şahin sesi yüklenemedi. İnternet bağlantını kontrol et.');
+    }
+    return;
+  }
+
   const fn = HAYVAN_SESLERI[tur];
   if (!fn) return;
   const ctx = sesBaglaminiAl();
   if (!ctx) return;
-  // Mobil tarayıcılarda ses bağlamı askıda kalabiliyor; tıklama sonrası
-  // sesin başlaması için önce bağlamı etkinleştir.
   try {
     if (ctx.state !== 'running') await ctx.resume();
     if (ctx.state === 'running') fn(Math.max(0, Number(asama) || 0));
@@ -643,6 +660,7 @@ function kisiKartlariniOlustur() {
           <div class="hayvanEmoji hayvanAsama${asama} tiklanabilir" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}" title="Dokun, dostunla oyna!">${mevcut.emoji}</div>
           <div class="hayvanAd">${escapeHtml(mevcut.ad)}</div>
           <button class="hayvanSesBtn" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}">🔊 Sesini Dinle</button>
+          ${evcilHayvanlar[isim] === 'kus' ? '<div style="font-size:11px;margin-top:5px"><a href="https://orangefreesounds.com/hawk-sound/" target="_blank" rel="noopener noreferrer">Gerçek şahin kaydı: TheClueGeek (CC BY 3.0)</a></div>' : ''}
           ${sonrakiEsik !== undefined
             ? `<div class="hayvanIlerleme"><div class="hayvanIlerlemeDolu" style="width:${Math.min(100, Math.round(((tamamlananSayisi - oncekiEsik) / (sonrakiEsik - oncekiEsik)) * 100))}%"></div></div>
                <div class="hayvanAlt">Sonraki evrime ${sonrakiEsik - tamamlananSayisi} kitap kaldı</div>`
