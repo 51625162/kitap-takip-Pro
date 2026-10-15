@@ -333,19 +333,35 @@ const HAYVAN_SESLERI = {
     kaymaliTonCal(tepe, tepe * 0.45, 0.65 + asama * 0.1, 'sine', 0.2, 0.2);
   },
   kus: (asama) => {
-    const taban = 900 + asama * 110;
-    tonCal(taban, 0.08, 'triangle', 0, 0.18);
-    tonCal(taban * 1.2, 0.08, 'triangle', 0.09, 0.18);
-    tonCal(taban * 1.4, 0.1, 'triangle', 0.18, 0.18);
+    // Şahin/kuş çağrısı: kısa, tiz ve iniş-çıkışlı ötüş.
+    const taban = 1450 + asama * 90;
+    kaymaliTonCal(taban, taban * 1.38, 0.12, 'sine', 0.24, 0);
+    kaymaliTonCal(taban * 1.32, taban * 0.92, 0.16, 'sine', 0.23, 0.14);
+    kaymaliTonCal(taban * 1.08, taban * 1.52, 0.11, 'triangle', 0.22, 0.34);
+    kaymaliTonCal(taban * 1.48, taban * 1.05, 0.18, 'sine', 0.22, 0.48);
+    if (asama >= 1) {
+      kaymaliTonCal(taban * 1.25, taban * 1.62, 0.13, 'triangle', 0.2, 0.72);
+      kaymaliTonCal(taban * 1.6, taban * 1.12, 0.2, 'sine', 0.2, 0.88);
+    }
   },
   balik: (asama) => {
     for (let i = 0; i < 3; i++) tonCal(700 + Math.random() * 300 + asama * 60, 0.08, 'sine', i * 0.09, 0.15);
   },
 };
 
-function hayvanSesiCal(tur, asama) {
+async function hayvanSesiCal(tur, asama) {
   const fn = HAYVAN_SESLERI[tur];
-  if (fn) fn(Math.max(0, Number(asama) || 0));
+  if (!fn) return;
+  const ctx = sesBaglaminiAl();
+  if (!ctx) return;
+  // Mobil tarayıcılarda ses bağlamı askıda kalabiliyor; tıklama sonrası
+  // sesin başlaması için önce bağlamı etkinleştir.
+  try {
+    if (ctx.state !== 'running') await ctx.resume();
+    if (ctx.state === 'running') fn(Math.max(0, Number(asama) || 0));
+  } catch (e) {
+    console.warn('Hayvan sesi başlatılamadı:', e);
+  }
 }
 
 // ------------------------------------------------------------
