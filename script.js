@@ -677,7 +677,7 @@ function kisiKartlariniOlustur() {
           <div class="hayvanEmoji hayvanAsama${asama} tiklanabilir" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}" title="Dokun, dostunla oyna!">${mevcut.emoji}</div>
           <div class="hayvanAd">${escapeHtml(mevcut.ad)}</div>
           <button class="hayvanSesBtn" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}">🔊 Sesini Dinle</button>
-          ${evcilHayvanlar[isim] === 'kus' ? '<div style="font-size:11px;margin-top:5px"><a href="https://orangefreesounds.com/hawk-sound/" target="_blank" rel="noopener noreferrer">Gerçek şahin kaydı: TheClueGeek (CC BY 3.0)</a></div>' : ''}
+
           ${sonrakiEsik !== undefined
             ? `<div class="hayvanIlerleme"><div class="hayvanIlerlemeDolu" style="width:${Math.min(100, Math.round(((tamamlananSayisi - oncekiEsik) / (sonrakiEsik - oncekiEsik)) * 100))}%"></div></div>
                <div class="hayvanAlt">Sonraki evrime ${sonrakiEsik - tamamlananSayisi} kitap kaldı</div>`
