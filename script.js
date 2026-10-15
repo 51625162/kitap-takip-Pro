@@ -39,7 +39,7 @@ const HAYVAN_TURLERI = {
       { ad: 'Yavru Kedi', emoji: '🐱' },
       { ad: 'Genç Panter', emoji: '🐆' },
       { ad: 'Kaplan', emoji: '🐅' },
-      { ad: 'Efsanevi Altın Aslan', emoji: '🦁' },
+      { ad: 'Efsanevi Altın Aslan', emoji: '🦁✨' },
     ],
   },
   kertenkele: {
@@ -48,7 +48,7 @@ const HAYVAN_TURLERI = {
       { ad: 'Yavru Kertenkele', emoji: '🦎' },
       { ad: 'Ejderha Yavrusu', emoji: '🐉' },
       { ad: 'Genç Ejderha', emoji: '🐲' },
-      { ad: 'Efsanevi Gökkuşağı Ejderhası', emoji: '🐉' },
+      { ad: 'Efsanevi Gökkuşağı Ejderhası', emoji: '🐉🌈' },
     ],
   },
   kurt: {
@@ -57,7 +57,7 @@ const HAYVAN_TURLERI = {
       { ad: 'Kurt Yavrusu', emoji: '🐺' },
       { ad: 'Genç Kurt', emoji: '🐺' },
       { ad: 'Kutup Kurdu', emoji: '🐺' },
-      { ad: 'Efsanevi Ay Kurdu', emoji: '🌕' },
+      { ad: 'Efsanevi Ay Kurdu', emoji: '🐺🌙' },
     ],
   },
   kus: {
@@ -66,7 +66,7 @@ const HAYVAN_TURLERI = {
       { ad: 'Yavru Kuş', emoji: '🐣' },
       { ad: 'Genç Şahin', emoji: '🦅' },
       { ad: 'Kartal', emoji: '🦅' },
-      { ad: 'Efsanevi Anka Kuşu', emoji: '🔥' },
+      { ad: 'Efsanevi Anka Kuşu', emoji: '🐦‍🔥' },
     ],
   },
   balik: {
