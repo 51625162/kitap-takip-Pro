@@ -333,15 +333,18 @@ const HAYVAN_SESLERI = {
     kaymaliTonCal(tepe, tepe * 0.45, 0.65 + asama * 0.1, 'sine', 0.2, 0.2);
   },
   kus: (asama) => {
-    // Şahin/kuş çağrısı: kısa, tiz ve iniş-çıkışlı ötüş.
-    const taban = 1450 + asama * 90;
-    kaymaliTonCal(taban, taban * 1.38, 0.12, 'sine', 0.24, 0);
-    kaymaliTonCal(taban * 1.32, taban * 0.92, 0.16, 'sine', 0.23, 0.14);
-    kaymaliTonCal(taban * 1.08, taban * 1.52, 0.11, 'triangle', 0.22, 0.34);
-    kaymaliTonCal(taban * 1.48, taban * 1.05, 0.18, 'sine', 0.22, 0.48);
+    // Kartal çağrısı: uzun, keskin çığlık; altında hafif boğuk ikinci katman.
+    // Evrim aşaması yükseldikçe ses daha tok ve güçlü duyulur.
+    const guc = 1 + Math.max(0, asama) * 0.08;
+    const tiz = 1850 - Math.max(0, asama) * 70;
+    kaymaliTonCal(tiz, tiz * 0.72, 0.62, 'sine', 0.25 * guc, 0);
+    kaymaliTonCal(tiz * 0.98, tiz * 0.58, 0.48, 'triangle', 0.13 * guc, 0.08);
+    kaymaliTonCal(720 + asama * 35, 480 + asama * 25, 0.52, 'sawtooth', 0.075 * guc, 0.04);
+    kaymaliTonCal(tiz * 0.78, tiz * 0.95, 0.22, 'sine', 0.16 * guc, 0.58);
+    kaymaliTonCal(tiz * 0.92, tiz * 0.62, 0.38, 'sine', 0.20 * guc, 0.82);
     if (asama >= 1) {
-      kaymaliTonCal(taban * 1.25, taban * 1.62, 0.13, 'triangle', 0.2, 0.72);
-      kaymaliTonCal(taban * 1.6, taban * 1.12, 0.2, 'sine', 0.2, 0.88);
+      kaymaliTonCal(tiz * 0.68, tiz * 0.52, 0.42, 'triangle', 0.14 * guc, 1.12);
+      kaymaliTonCal(610 + asama * 30, 390 + asama * 20, 0.46, 'sawtooth', 0.07 * guc, 1.1);
     }
   },
   balik: (asama) => {
