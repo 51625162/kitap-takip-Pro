@@ -349,39 +349,25 @@ const HAYVAN_SESLERI = {
   },
 };
 
-let sahinSesKaydi = null;
-
 async function hayvanSesiCal(tur, asama) {
-  // Kartal/şahin kaydını normal HTML audio ile oynat. WebAudio kaynak hattı,
-  // harici sunucunun CORS kısıtlaması nedeniyle sesi susturabiliyordu.
+  // Kuş/kartal sesi harici MP3'e bağlı değildir: dokunma ile yerel WebAudio
+  // çağrısı üretir. Böylece bağlantı/CORS sorunu nedeniyle sessiz kalmaz.
   if (tur === 'kus') {
     try {
-      if (!sahinSesKaydi) {
-        sahinSesKaydi = new Audio('https://www.orangefreesounds.com/wp-content/uploads/2015/02/Hawk-sound.mp3');
-        sahinSesKaydi.preload = 'auto';
-        sahinSesKaydi.volume = 1;
-      }
-      sahinSesKaydi.pause();
-      sahinSesKaydi.currentTime = 0;
-      await sahinSesKaydi.play();
-      return;
-    } catch (e) {
-      console.warn('Harici kartal/şahin kaydı oynatılamadı; yerel ses üretiliyor:', e);
       const ctx = sesBaglaminiAl();
-      const yedekSes = HAYVAN_SESLERI.kus;
-      if (ctx && yedekSes) {
-        try {
-          if (ctx.state !== 'running') await ctx.resume();
-          if (ctx.state === 'running') {
-            yedekSes(Math.max(0, Number(asama) || 0));
-            if (typeof showToast === 'function') showToast('Kartal çağrısı uygulama içi yedek sesle çalındı.');
-            return;
-          }
-        } catch (yedekHata) {
-          console.warn('Yedek kartal sesi de çalınamadı:', yedekHata);
-        }
+      if (!ctx) {
+        if (typeof showToast === 'function') showToast('Ses altyapısı başlatılamadı. Sayfaya tekrar dokun.');
+        return;
       }
-      if (typeof showToast === 'function') showToast('Kartal sesi çalınamadı. Telefonun medya sesini kontrol et.');
+      if (ctx.state !== 'running') await ctx.resume();
+      if (ctx.state === 'running') {
+        HAYVAN_SESLERI.kus(Math.max(2, Number(asama) || 0));
+      } else if (typeof showToast === 'function') {
+        showToast('Ses kapalı. Cihazın medya sesini yükselt.');
+      }
+    } catch (e) {
+      console.warn('Kartal sesi başlatılamadı:', e);
+      if (typeof showToast === 'function') showToast('Kartal sesi başlatılamadı. Medya sesini kontrol et.');
     }
     return;
   }
