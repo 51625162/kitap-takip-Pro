@@ -1259,19 +1259,29 @@ if (excelAktarBtn) excelAktarBtn.addEventListener('click', excelAktar);
 function excelAktar() {
   if (kayitlar.length === 0) { alert('Aktarılacak kayıt yok.'); return; }
 
-  const veri = kayitlar.map(k => ({
-    Tarih: k.tarih,
-    Kisi: k.kisi,
-    Kitap: k.kitap,
-    Yazar: k.yazar,
-    OkunanSayfa: k.okunanSayfa,
-    ToplamSayfa: k.toplamSayfa
-  }));
+  const okuyucular = kisiler.filter(isim => kayitlar.some(k => k.kisi === isim));
+  if (okuyucular.length === 0) { alert('Excel’e aktarılacak okuyucu kaydı yok.'); return; }
 
-  const ws = XLSX.utils.json_to_sheet(veri);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Kitaplar");
-  XLSX.writeFile(wb, `KitapTakip_${bugunYYYYMMDD()}.xlsx`);
+  okuyucular.forEach((isim, index) => {
+    const kisiKayitlari = kayitlar.filter(k => k.kisi === isim);
+    const veri = kisiKayitlari.map(k => ({
+      Tarih: k.tarih,
+      Kisi: k.kisi,
+      Kitap: k.kitap,
+      Yazar: k.yazar,
+      OkunanSayfa: k.okunanSayfa,
+      ToplamSayfa: k.toplamSayfa
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(veri);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Kitaplar");
+    // Her okuyucu için ayrı dosya; adlar dosya adına güvenli biçimde yazılır.
+    const guvenliAd = isim.replace(/[\\/:*?"<>|]/g, '_').trim();
+    setTimeout(() => XLSX.writeFile(wb, `KitapTakip_${guvenliAd}_${bugunYYYYMMDD()}.xlsx`), index * 700);
+  });
+
+  alert('Her okuyucu için ayrı Excel dosyası hazırlanıyor. Tarayıcı birden fazla indirmeye izin isterse onaylayın.');
 }
 
 const excelDosyaInput = document.getElementById('excelDosya');
@@ -1329,40 +1339,38 @@ if (pdfBtn) pdfBtn.addEventListener("click", pdfOlustur);
 
 function pdfOlustur() {
   const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF();
+  const okuyucular = kisiler.filter(isim => kayitlar.some(k => k.kisi === isim));
+  if (okuyucular.length === 0) { alert('PDF’e aktarılacak okuyucu kaydı yok.'); return; }
 
-  pdf.setFontSize(20);
-  pdf.text("Kitap Takip Pro Raporu", 20, 20);
-  pdf.setFontSize(10);
-  pdf.text("Olusturulma Tarihi: " + new Date().toLocaleDateString('tr-TR'), 20, 27);
-
-  let y = 40;
-
-  if (kisiler.length === 0) {
-    pdf.setFontSize(12);
-    pdf.text("Henuz kayitli okuyucu yok.", 20, y);
-  }
-
-  kisiler.forEach(isim => {
+  okuyucular.forEach((isim, index) => {
+    const pdf = new jsPDF();
     const ist = kisiIstatistikleri(isim);
+
+    pdf.setFontSize(20);
+    pdf.text("Kitap Takip Raporu - " + isim, 20, 20);
+    pdf.setFontSize(10);
+    pdf.text("Olusturulma Tarihi: " + new Date().toLocaleDateString('tr-TR'), 20, 27);
+
+    let y = 40;
     pdf.setFontSize(14);
     pdf.text(`${isim} - ${ist.tamamlanan.length} kitap, ${ist.toplamSayfa} sayfa`, 20, y);
-    y += 8;
+    y += 10;
     pdf.setFontSize(10);
 
     ist.kitaplar.forEach(kt => {
       const durum = (kt.toplamSayfa > 0 && kt.okunan >= kt.toplamSayfa) ? 'Tamamlandi' : 'Devam Ediyor';
-      const satir = `  - ${kt.kitap} (${kt.yazar || '-'}) - ${kt.okunan}/${kt.toplamSayfa || '?'} - ${durum}`;
-      pdf.text(satir, 22, y);
-      y += 6;
+      const satir = `- ${kt.kitap} (${kt.yazar || '-'}) - ${kt.okunan}/${kt.toplamSayfa || '?'} - ${durum}`;
+      const satirlar = pdf.splitTextToSize(satir, 170);
+      pdf.text(satirlar, 22, y);
+      y += satirlar.length * 5 + 2;
       if (y > 280) { pdf.addPage(); y = 20; }
     });
 
-    y += 6;
-    if (y > 270) { pdf.addPage(); y = 20; }
+    const guvenliAd = isim.replace(/[\\/:*?"<>|]/g, '_').trim();
+    setTimeout(() => pdf.save(`KitapTakipRaporu_${guvenliAd}_${bugunYYYYMMDD()}.pdf`), index * 700);
   });
 
-  pdf.save(`KitapTakipRaporu_${bugunYYYYMMDD()}.pdf`);
+  alert('Her okuyucu için ayrı PDF dosyası hazırlanıyor. Tarayıcı birden fazla indirmeye izin isterse onaylayın.');
 }
 
 // ------------------------------------------------------------
