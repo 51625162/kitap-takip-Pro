@@ -356,25 +356,23 @@ async function hayvanSesiCal(tur, asama) {
   // Kuş/kartal sesi harici MP3'e bağlı değildir: dokunma ile yerel WebAudio
   // çağrısı üretir. Böylece bağlantı/CORS sorunu nedeniyle sessiz kalmaz.
   if (tur === 'kus') {
+    // Kartal için gerçek MP3 kaydı kullanılır.
     try {
-      const ctx = sesBaglaminiAl();
-      if (!ctx) {
-        if (typeof showToast === 'function') showToast('Ses altyapısı başlatılamadı. Sayfaya tekrar dokun.');
-        return;
+      const url = 'https://www.orangefreesounds.com/wp-content/uploads/2014/10/Eagle-sound.mp3';
+      if (window.kartalSesAudio) {
+        window.kartalSesAudio.pause();
+        window.kartalSesAudio.currentTime = 0;
       }
-      if (ctx.state !== 'running') await ctx.resume();
-      if (ctx.state === 'running') {
-        HAYVAN_SESLERI.kus(Math.max(2, Number(asama) || 0));
-      } else if (typeof showToast === 'function') {
-        showToast('Ses kapalı. Cihazın medya sesini yükselt.');
-      }
+      window.kartalSesAudio = new Audio(url);
+      window.kartalSesAudio.preload = 'auto';
+      window.kartalSesAudio.volume = 0.9;
+      await window.kartalSesAudio.play();
     } catch (e) {
-      console.warn('Kartal sesi başlatılamadı:', e);
-      if (typeof showToast === 'function') showToast('Kartal sesi başlatılamadı. Medya sesini kontrol et.');
+      console.warn('Gerçek kartal sesi başlatılamadı:', e);
+      if (typeof showToast === 'function') showToast('Kartal kaydı açılamadı. İnternet bağlantısını ve medya sesini kontrol et.');
     }
     return;
   }
-
   const fn = HAYVAN_SESLERI[tur];
   if (!fn) return;
   const ctx = sesBaglaminiAl();
