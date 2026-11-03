@@ -830,7 +830,6 @@ body.dark .ulkeOzellik span, body.dark .bilimKart p, body.dark .oduTanim span, b
 @media (prefers-reduced-motion: reduce) {
   .hayvanEmoji, .hayvanAsama1, .hayvanAsama2, .hayvanAsama3, .hayvanEmoji.sevinc { animation: none; }
   .anaSekmeIcerik { animation: none; }
-  .atlasModalKutu { animation: none; }
 }
 
 /* Efsanevi Altın Aslan: tam vücut kanatlı karakter görseli */
