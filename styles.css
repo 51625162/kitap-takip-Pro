@@ -857,3 +857,25 @@ body.dark .ulkeOzellik span, body.dark .bilimKart p, body.dark .oduTanim span, b
 /* Efsanevi Anka Kuşu: tam boy alevli kuş illüstrasyonu */
 .hayvanEmoji.hayvanResimli { display:block; width:min(100%,250px); margin:0 auto; font-size:initial; line-height:0; animation:hayvanSallan 2s ease-in-out infinite, hayvanParla 1.5s ease-in-out infinite alternate; }
 .hayvanKarakterResmi { display:block; width:100%; height:auto; max-height:290px; object-fit:contain; overflow:visible; }
+
+/* Excel okuyucu seçimi: native select alanını görünür tut */
+.excelGrup #excelKisiSecimi {
+  display: block;
+  flex: 0 1 240px;
+  width: 240px;
+  min-width: 210px;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 2px solid var(--basari);
+  border-radius: 11px;
+  background: #17204f;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  appearance: auto;
+  -webkit-appearance: menulist;
+}
+.excelGrup #excelKisiSecimi option {
+  background: #17204f;
+  color: #ffffff;
+}
