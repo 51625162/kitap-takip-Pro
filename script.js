@@ -533,6 +533,12 @@ function kisiListesiniGuncelle() {
   if (liste) {
     liste.innerHTML = kisiler.map(ad => `<option value="${escapeHtml(ad)}">${escapeHtml(ad)}</option>`).join('');
   }
+  const excelSecim = document.getElementById('excelKisiSecimi');
+  if (excelSecim) {
+    const eskiSecim = excelSecim.value;
+    excelSecim.innerHTML = '<option value="">Excel için okuyucu seç</option>' + kisiler.map(ad => `<option value="${escapeHtml(ad)}">${escapeHtml(ad)}</option>`).join('');
+    if (kisiler.includes(eskiSecim)) excelSecim.value = eskiSecim;
+  }
 }
 
 // ------------------------------------------------------------
@@ -1256,30 +1262,20 @@ if (excelAktarBtn) excelAktarBtn.addEventListener('click', excelAktar);
 
 function excelAktar() {
   if (kayitlar.length === 0) { alert('Aktarılacak kayıt yok.'); return; }
-
-  const okuyucular = kisiler.filter(isim => kayitlar.some(k => k.kisi === isim));
-  if (okuyucular.length === 0) { alert('Excel’e aktarılacak okuyucu kaydı yok.'); return; }
-
-  okuyucular.forEach((isim, index) => {
-    const kisiKayitlari = kayitlar.filter(k => k.kisi === isim);
-    const veri = kisiKayitlari.map(k => ({
-      Tarih: k.tarih,
-      Kisi: k.kisi,
-      Kitap: k.kitap,
-      Yazar: k.yazar,
-      OkunanSayfa: k.okunanSayfa,
-      ToplamSayfa: k.toplamSayfa
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(veri);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Kitaplar");
-    // Her okuyucu için ayrı dosya; adlar dosya adına güvenli biçimde yazılır.
-    const guvenliAd = isim.replace(/[\\/:*?"<>|]/g, '_').trim();
-    setTimeout(() => XLSX.writeFile(wb, `KitapTakip_${guvenliAd}_${bugunYYYYMMDD()}.xlsx`), index * 700);
-  });
-
-  alert('Her okuyucu için ayrı Excel dosyası hazırlanıyor. Tarayıcı birden fazla indirmeye izin isterse onaylayın.');
+  const secim = document.getElementById('excelKisiSecimi');
+  const isim = secim ? secim.value : '';
+  if (!isim) { alert('Excel indirmek için önce okuyucu seç.'); return; }
+  const kisiKayitlari = kayitlar.filter(k => k.kisi === isim);
+  if (kisiKayitlari.length === 0) { alert(isim + ' için kayıt bulunamadı.'); return; }
+  const veri = kisiKayitlari.map(k => ({
+    Tarih: k.tarih, Kisi: k.kisi, Kitap: k.kitap, Yazar: k.yazar,
+    OkunanSayfa: k.okunanSayfa, ToplamSayfa: k.toplamSayfa
+  }));
+  const ws = XLSX.utils.json_to_sheet(veri);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Kitaplar');
+  const guvenliAd = isim.replace(/[\\/:*?"<>|]/g, '_').trim();
+  XLSX.writeFile(wb, `KitapTakip_${guvenliAd}_${bugunYYYYMMDD()}.xlsx`);
 }
 
 const excelDosyaInput = document.getElementById('excelDosya');
