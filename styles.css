@@ -22,16 +22,16 @@
    ============================================================ */
 
 :root {
-  --uzay-derin: #0B1026;
-  --uzay-orta: #171B3D;
-  --uzay-acik: #262C57;
-  --nebula: #6C4AB6;
-  --alev: #FF7A45;
-  --yildiz: #FFD166;
-  --bulut: #FFF9F0;
-  --basari: #4ECDC4;
-  --metin: #1F2333;
-  --gri: #7B7B93;
+  --uzay-derin: #142B35;
+  --uzay-orta: #244653;
+  --uzay-acik: #DDEBE8;
+  --nebula: #2D8C82;
+  --alev: #167D75;
+  --yildiz: #E6B85C;
+  --bulut: #FFFFFF;
+  --basari: #62B8A8;
+  --metin: #263B43;
+  --gri: #71838A;
   --golge: 0 10px 24px rgba(11, 16, 38, 0.16);
   --golge-derin: 0 16px 40px rgba(11, 16, 38, 0.45);
 }
@@ -41,7 +41,7 @@
 body {
   margin: 0;
   font-family: 'Quicksand', sans-serif;
-  background: #F2EEFB;
+  background: #EAF2EF;
   color: var(--metin);
   min-height: 100vh;
 }
@@ -94,7 +94,7 @@ h1, h2, h3 {
   padding: 12px 14px;
   margin-bottom: 12px;
   border-radius: 12px;
-  border: 2px solid #E8E1F5;
+  border: 2px solid #DCE9E4;
   font-family: 'Quicksand', sans-serif;
   font-weight: 600;
   font-size: 15px;
@@ -182,7 +182,7 @@ main {
   gap: 8px;
   flex-wrap: wrap;
   padding: 10px 12px;
-  background: rgba(242, 238, 251, 0.9);
+  background: rgba(234, 242, 239, 0.94);
   backdrop-filter: blur(6px);
   border-radius: 16px;
   box-shadow: var(--golge);
@@ -262,11 +262,11 @@ input[type="text"], input[type="password"], input[type="number"], input[type="da
   width: 100%;
   padding: 10px 12px;
   border-radius: 11px;
-  border: 2px solid #ECE7F8;
+  border: 2px solid #DCE9E4;
   font-family: 'Quicksand', sans-serif;
   font-weight: 600;
   font-size: 14px;
-  background: #FBFAFE;
+  background: #F8FBFA;
 }
 input:focus, select:focus { outline: none; border-color: var(--nebula); }
 
@@ -564,7 +564,7 @@ input:focus, select:focus { outline: none; border-color: var(--nebula); }
   text-align: center;
   color: var(--gri);
   font-size: 14px;
-  background: #F5F2FC;
+  background: #F0F6F3;
   border-radius: 14px;
 }
 
@@ -597,17 +597,17 @@ input:focus, select:focus { outline: none; border-color: var(--nebula); }
   gap: 10px;
   flex-wrap: wrap;
   padding-top: 14px;
-  border-top: 1px dashed #ECE7F8;
+  border-top: 1px dashed #DCE9E4;
 }
 
 /* ---------------- DEVAM EDEN GÖREVLER ---------------- */
 .devamListesi { display: flex; flex-direction: column; gap: 12px; }
 
 .devamKart {
-  background: #F8F6FD;
+  background: #F3F8F6;
   border-radius: 14px;
   padding: 12px 14px;
-  border: 1px solid #ECE7F8;
+  border: 1px solid #DCE9E4;
 }
 .devamBaslik { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; }
 .devamKisi { font-weight: 700; color: var(--uzay-orta); }
@@ -615,7 +615,7 @@ input:focus, select:focus { outline: none; border-color: var(--nebula); }
 
 .ilerlemeCubugu {
   height: 12px;
-  background: #E4DEF5;
+  background: #DCE9E4;
   border-radius: 999px;
   overflow: hidden;
 }
@@ -653,10 +653,10 @@ thead th {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: .05em;
-  border-bottom: 2px solid #ECE7F8;
+  border-bottom: 2px solid #DCE9E4;
 }
-tbody td { padding: 10px 8px; border-bottom: 1px solid #F2EFFA; }
-tbody tr:hover { background: #FAF8FE; }
+tbody td { padding: 10px 8px; border-bottom: 1px solid #E6EFEB; }
+tbody tr:hover { background: #F4F9F6; }
 
 .durumRozeti { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
 .durumRozeti.tamam { background: #DCF7F3; color: #0E7D71; }
