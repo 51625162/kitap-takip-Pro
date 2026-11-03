@@ -356,31 +356,20 @@ async function hayvanSesiCal(tur, asama) {
   // Kuş/kartal sesi harici MP3'e bağlı değildir: dokunma ile yerel WebAudio
   // çağrısı üretir. Böylece bağlantı/CORS sorunu nedeniyle sessiz kalmaz.
   if (tur === 'kus') {
-    // MP3 kaydını Web Audio gain ile güçlendir; kullanıcı dokunuşuyla oynat.
+    // MP3 kaydını doğrudan çal. Cross-origin WebAudio filtresi sesi susturabildiğinden kullanma.
     try {
-      if (window.kartalSesAudio) { window.kartalSesAudio.pause(); window.kartalSesAudio.currentTime = 0; }
-      const ctx = sesBaglaminiAl();
-      if (!ctx) throw new Error('Ses bağlamı açılamadı');
-      if (ctx.state !== 'running') await ctx.resume();
+      if (window.kartalSesAudio) {
+        window.kartalSesAudio.pause();
+        window.kartalSesAudio.currentTime = 0;
+      }
       const audio = new Audio('https://www.orangefreesounds.com/wp-content/uploads/2014/10/Eagle-sound.mp3');
-      audio.crossOrigin = 'anonymous';
       audio.preload = 'auto';
       audio.volume = 1;
       window.kartalSesAudio = audio;
-      const source = ctx.createMediaElementSource(audio);
-      const gain = ctx.createGain();
-      gain.gain.setValueAtTime(3.5, ctx.currentTime);
-      const compressor = ctx.createDynamicsCompressor();
-      compressor.threshold.setValueAtTime(-14, ctx.currentTime);
-      compressor.knee.setValueAtTime(5, ctx.currentTime);
-      compressor.ratio.setValueAtTime(5, ctx.currentTime);
-      compressor.attack.setValueAtTime(0.003, ctx.currentTime);
-      compressor.release.setValueAtTime(0.22, ctx.currentTime);
-      source.connect(gain); gain.connect(compressor); compressor.connect(ctx.destination);
       await audio.play();
     } catch (e) {
       console.warn('Kartal sesi başlatılamadı:', e);
-      if (typeof showToast === 'function') showToast('Kartal sesi açılamadı. İnternet bağlantısını ve medya sesini kontrol et.');
+      if (typeof showToast === 'function') showToast('Kartal kaydı açılamadı. İnternet bağlantısını ve medya sesini kontrol et.');
     }
     return;
   }
