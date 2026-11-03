@@ -350,6 +350,8 @@ const HAYVAN_SESLERI = {
 };
 
 let sahinSesKaydi = null;
+let sahinSesCtx = null;
+let sahinSesGain = null;
 
 async function hayvanSesiCal(tur, asama) {
   // Genç Şahin için önce gerçek kayıt denenir; bağlantı/oynatma hatasında
@@ -359,6 +361,13 @@ async function hayvanSesiCal(tur, asama) {
       if (!sahinSesKaydi) {
         sahinSesKaydi = new Audio('https://www.orangefreesounds.com/wp-content/uploads/2015/02/Hawk-sound.mp3');
         sahinSesKaydi.preload = 'auto';
+        // Kartal/şahin çağrısını belirgin biçimde yükselt; kaynak oynatıcıyı tek WebAudio hattına bağla.
+        sahinSesCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const kaynak = sahinSesCtx.createMediaElementSource(sahinSesKaydi);
+        sahinSesGain = sahinSesCtx.createGain();
+        sahinSesGain.gain.value = 2.6;
+        kaynak.connect(sahinSesGain);
+        sahinSesGain.connect(sahinSesCtx.destination);
       }
       sahinSesKaydi.pause();
       sahinSesKaydi.currentTime = 0;
@@ -674,7 +683,7 @@ function kisiKartlariniOlustur() {
 
       hayvanHtml = `
         <div class="hayvanKart ${efsaneMi ? 'efsanevi' : ''}">
-          <div class="hayvanEmoji hayvanAsama${asama} tiklanabilir ${efsaneMi && ['kedi', 'kurt', 'kus'].includes(evcilHayvanlar[isim]) ? 'hayvanResimli' : ''}" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}" title="Dokun, dostunla oyna!">${efsaneMi && evcilHayvanlar[isim] === 'kedi' ? '<img src="images/efsanevi-altin-aslan.svg" alt="Efsanevi Altın Kanatlı Aslan" class="hayvanKarakterResmi">' : efsaneMi && evcilHayvanlar[isim] === 'kurt' ? '<img src="images/efsanevi-ay-kurdu.svg" alt="Efsanevi Ay Kurdu" class="hayvanKarakterResmi">' : efsaneMi && evcilHayvanlar[isim] === 'kus' ? '<img src="images/efsanevi-anka-kusu.svg" alt="Efsanevi Anka Kuşu" class="hayvanKarakterResmi">' : mevcut.emoji}</div>
+          <div class="hayvanEmoji hayvanAsama${asama} tiklanabilir ${(evcilHayvanlar[isim] === 'kus' && asama >= 2) || (efsaneMi && ['kedi', 'kurt', 'kus'].includes(evcilHayvanlar[isim])) ? 'hayvanResimli' : ''}" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}" title="Dokun, dostunla oyna!">${efsaneMi && evcilHayvanlar[isim] === 'kedi' ? '<img src="images/efsanevi-altin-aslan.svg" alt="Efsanevi Altın Kanatlı Aslan" class="hayvanKarakterResmi">' : efsaneMi && evcilHayvanlar[isim] === 'kurt' ? '<img src="images/efsanevi-ay-kurdu.svg" alt="Efsanevi Ay Kurdu" class="hayvanKarakterResmi">' : evcilHayvanlar[isim] === 'kus' && asama === 2 ? '<img src="images/efsanevi-kartal.svg" alt="Efsanevi Altın Kartal" class="hayvanKarakterResmi">' : efsaneMi && evcilHayvanlar[isim] === 'kus' ? '<img src="images/efsanevi-anka-kusu.svg" alt="Efsanevi Anka Kuşu" class="hayvanKarakterResmi">' : mevcut.emoji}</div>
           <div class="hayvanAd">${escapeHtml(mevcut.ad)}</div>
           <button class="hayvanSesBtn" data-tur="${evcilHayvanlar[isim]}" data-asama="${asama}">🔊 Sesini Dinle</button>
 
