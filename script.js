@@ -371,6 +371,7 @@ async function hayvanSesiCal(tur, asama) {
       }
       sahinSesKaydi.pause();
       sahinSesKaydi.currentTime = 0;
+      if (sahinSesCtx && sahinSesCtx.state !== 'running') await sahinSesCtx.resume();
       await sahinSesKaydi.play();
       return;
     } catch (e) {
