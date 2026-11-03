@@ -350,33 +350,23 @@ const HAYVAN_SESLERI = {
 };
 
 let sahinSesKaydi = null;
-let sahinSesCtx = null;
-let sahinSesGain = null;
 
 async function hayvanSesiCal(tur, asama) {
-  // Genç Şahin için önce gerçek kayıt denenir; bağlantı/oynatma hatasında
-  // sessiz kalmaması için Web Audio ile hazırlanmış yedek ses kullanılır.
+  // Kartal/şahin kaydını normal HTML audio ile oynat. WebAudio kaynak hattı,
+  // harici sunucunun CORS kısıtlaması nedeniyle sesi susturabiliyordu.
   if (tur === 'kus') {
     try {
       if (!sahinSesKaydi) {
         sahinSesKaydi = new Audio('https://www.orangefreesounds.com/wp-content/uploads/2015/02/Hawk-sound.mp3');
         sahinSesKaydi.preload = 'auto';
-        // Kartal/şahin çağrısını belirgin biçimde yükselt; kaynak oynatıcıyı tek WebAudio hattına bağla.
-        sahinSesCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const kaynak = sahinSesCtx.createMediaElementSource(sahinSesKaydi);
-        sahinSesGain = sahinSesCtx.createGain();
-        sahinSesGain.gain.value = 2.6;
-        kaynak.connect(sahinSesGain);
-        sahinSesGain.connect(sahinSesCtx.destination);
+        sahinSesKaydi.volume = 1;
       }
       sahinSesKaydi.pause();
       sahinSesKaydi.currentTime = 0;
-      if (sahinSesCtx && sahinSesCtx.state !== 'running') await sahinSesCtx.resume();
       await sahinSesKaydi.play();
       return;
     } catch (e) {
-      console.warn('Gerçek şahin sesi çalınamadı; yedek ses deneniyor:', e);
-      // İnternet veya harici ses sunucusu erişilemezse uygulama içi sesle devam et.
+      console.warn('Harici kartal/şahin kaydı oynatılamadı; yerel ses üretiliyor:', e);
       const ctx = sesBaglaminiAl();
       const yedekSes = HAYVAN_SESLERI.kus;
       if (ctx && yedekSes) {
@@ -384,14 +374,14 @@ async function hayvanSesiCal(tur, asama) {
           if (ctx.state !== 'running') await ctx.resume();
           if (ctx.state === 'running') {
             yedekSes(Math.max(0, Number(asama) || 0));
-            if (typeof showToast === 'function') showToast('Gerçek kayıt açılamadı; yedek şahin sesi çalındı.');
+            if (typeof showToast === 'function') showToast('Kartal çağrısı uygulama içi yedek sesle çalındı.');
             return;
           }
         } catch (yedekHata) {
-          console.warn('Yedek şahin sesi de çalınamadı:', yedekHata);
+          console.warn('Yedek kartal sesi de çalınamadı:', yedekHata);
         }
       }
-      if (typeof showToast === 'function') showToast('Şahin sesi çalınamadı. Telefonun sesini ve internet bağlantını kontrol et.');
+      if (typeof showToast === 'function') showToast('Kartal sesi çalınamadı. Telefonun medya sesini kontrol et.');
     }
     return;
   }
