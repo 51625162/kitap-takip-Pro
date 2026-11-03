@@ -176,7 +176,10 @@
             </div>
 
             <div class="excelGrup">
-              <button id="excelAktarBtn" class="btn btn-success">📥 Excel'e Aktar</button>
+              <select id="excelKisiSecimi" aria-label="Excel indirilecek okuyucu" class="btn btn-ghost">
+                <option value="">Excel için okuyucu seç</option>
+              </select>
+              <button id="excelAktarBtn" class="btn btn-success">📥 Seçilen Okuyucunun Excel'ini İndir</button>
 
               <input type="file" id="excelDosya" accept=".xlsx,.xls" style="display:none" />
               <button id="excelYukleBtn" class="btn btn-secondary" onclick="document.getElementById('excelDosya').click()">
