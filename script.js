@@ -941,6 +941,9 @@ function kayitlariGoster() {
   `).join('');
 }
 
+const gunlukKisiFiltresi = document.getElementById('ucusGunluguKisiFiltresi');
+if (gunlukKisiFiltresi) gunlukKisiFiltresi.addEventListener('change', kayitlariGoster);
+
 const kayitlarBody = document.getElementById('kayitlarBody');
 if (kayitlarBody) {
   kayitlarBody.addEventListener('click', e => {
