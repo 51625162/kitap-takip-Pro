@@ -539,6 +539,12 @@ function kisiListesiniGuncelle() {
     excelSecim.innerHTML = '<option value="">Excel için okuyucu seç</option>' + kisiler.map(ad => `<option value="${escapeHtml(ad)}">${escapeHtml(ad)}</option>`).join('');
     if (kisiler.includes(eskiSecim)) excelSecim.value = eskiSecim;
   }
+  const gunlukFiltre = document.getElementById('ucusGunluguKisiFiltresi');
+  if (gunlukFiltre) {
+    const eskiFiltre = gunlukFiltre.value;
+    gunlukFiltre.innerHTML = '<option value="">Tüm okuyucular</option>' + kisiler.map(ad => `<option value="${escapeHtml(ad)}">${escapeHtml(ad)}</option>`).join('');
+    if (kisiler.includes(eskiFiltre)) gunlukFiltre.value = eskiFiltre;
+  }
 }
 
 // ------------------------------------------------------------
@@ -909,16 +915,16 @@ function duzenlemeyiIptalEt() {
 function kayitlariGoster() {
   const body = document.getElementById('kayitlarBody');
   if (!body) return;
-
-  if (kayitlar.length === 0) {
-    body.innerHTML = `<tr><td colspan="7" class="bosDurum">Henüz kayıt yok. Yukarıdan yeni bir okuma kaydı ekleyin.</td></tr>`;
-    return;
-  }
-
+  const filtre = document.getElementById('ucusGunluguKisiFiltresi');
+  const secilenKisi = filtre ? filtre.value : '';
   const sirali = kayitlar
     .map((k, i) => ({ k, i }))
+    .filter(({ k }) => !secilenKisi || k.kisi === secilenKisi)
     .sort((a, b) => (b.k.tarih || '').localeCompare(a.k.tarih || ''));
-
+  if (sirali.length === 0) {
+    body.innerHTML = `<tr><td colspan="7" class="bosDurum">${kayitlar.length ? 'Seçilen okuyucu için kayıt yok.' : 'Henüz kayıt yok. Yukarıdan yeni bir okuma kaydı ekleyin.'}</td></tr>`;
+    return;
+  }
   body.innerHTML = sirali.map(({ k, i }) => `
     <tr>
       <td>${formatTarih(k.tarih)}</td>
