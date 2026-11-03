@@ -1682,8 +1682,32 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') atlasModalKapat();
 });
 
+// World atlas: fetch independent countries and present them as a page-turning book
+let atlasDunyaKitabi=[], atlasKitapSayfa=0;
+async function atlasTumDunyaUlkeVerisiniYukle(){
+ const alan=document.getElementById('atlas-ulkeler'); if(alan) alan.innerHTML='<p class="atlasBookLoading">🌍 Dünya atlası hazırlanıyor…</p>';
+ try{
+  const r=await fetch('https://restcountries.com/v3.1/all?fields=name,flags,capital,region,subregion,population,area,languages,currencies,borders,cca3,independent');
+  if(!r.ok) throw Error('Country data unavailable'); const raw=await r.json();
+  atlasDunyaKitabi=raw.filter(u=>u.independent===true).map(u=>({name:u.name?.common||'Ülke',official:u.name?.official||'',flag:u.flags?.png||u.flags?.svg||'',capital:(u.capital||['Başkent bilgisi yok']).join(', '),region:u.region||'Bölge yok',subregion:u.subregion||'',population:+u.population||0,area:+u.area||0,languages:Object.values(u.languages||{}).join(', ')||'Bilgi yok',currencies:Object.values(u.currencies||{}).map(c=>c.name+' ('+(c.symbol||'')+')').join(', ')||'Bilgi yok',borders:(u.borders||[]).join(', ')||'Kara sınırı yok/belirtilmemiş'})).sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+  atlasDunyaKitapKartlariniGoster();
+ }catch(e){console.warn(e);if(alan)alan.innerHTML='<p class="atlasBookLoading">Ülkelerin atlas verisi için internet bağlantısı gerekli. Yenile ve tekrar dene.</p>';}
+}
+function atlasDunyaKitapKartlariniGoster(){
+ const a=document.getElementById('atlas-ulkeler');if(!a||!atlasDunyaKitabi.length)return;
+ a.innerHTML='<div class="atlasBookToolbar"><div><strong>🌐 Dünya Ülkeleri Atlası</strong><small>'+atlasDunyaKitabi.length+' ülke · Bir ülkeye dokun, kitabı aç</small></div><input id="atlasUlkeAra" type="search" placeholder="Ülke ara…"></div><div class="atlasBookGrid">'+atlasDunyaKitabi.map((u,i)=>'<button class="atlasBookCountry" data-atlas-book-index="'+i+'" type="button"><img src="'+escapeHtml(u.flag)+'" alt="'+escapeHtml(u.name)+' bayrağı" loading="lazy"><span><strong>'+escapeHtml(u.name)+'</strong><small>'+escapeHtml(u.capital)+' · '+escapeHtml(u.region)+'</small></span><b>📖</b></button>').join('')+'</div>';
+ document.getElementById('atlasUlkeAra')?.addEventListener('input',e=>{const q=e.target.value.trim().toLocaleLowerCase('tr');a.querySelectorAll('.atlasBookCountry').forEach(c=>{const u=atlasDunyaKitabi[+c.dataset.atlasBookIndex];c.style.display=u.name.toLocaleLowerCase('tr').includes(q)||u.capital.toLocaleLowerCase('tr').includes(q)?'flex':'none';});});
+}
+function atlasDunyaKitapSayfasiniAc(i){atlasKitapSayfa=Math.max(0,Math.min(i,atlasDunyaKitabi.length-1));atlasDunyaKitapSayfasiniCiz();const m=document.getElementById('atlasModal');if(m){m.style.display='flex';document.body.style.overflow='hidden';}}
+function atlasDunyaKitapSayfasiniCiz(turn=''){
+ const c=document.getElementById('atlasModalIcerik');if(!c||!atlasDunyaKitabi.length)return;const u=atlasDunyaKitabi[atlasKitapSayfa],fmt=n=>(+n||0).toLocaleString('tr-TR');
+ c.innerHTML='<div class="atlasBookPage '+(turn?'atlasPageTurn':'')+'"><div class="atlasBookTopline"><span>🌍 ÇOCUK DÜNYA ATLASI</span><span>Sayfa '+(atlasKitapSayfa+1)+' / '+atlasDunyaKitabi.length+'</span></div><div class="atlasBookHero"><img class="atlasBookFlag" src="'+escapeHtml(u.flag)+'" alt="Bayrak"><div><p class="atlasBookKicker">'+escapeHtml(u.region+' · '+u.subregion)+'</p><h2>'+escapeHtml(u.name)+'</h2><p class="atlasBookOfficial">'+escapeHtml(u.official)+'</p></div></div><div class="atlasBookFacts">'+[['🏛️ Başkent',u.capital],['👥 Nüfus',fmt(u.population)+' kişi'],['🗺️ Yüzölçümü',fmt(u.area)+' km²'],['🗣️ Diller',u.languages],['💰 Para birimi',u.currencies],['🧭 Kara sınırları',u.borders]].map(x=>'<article><span>'+escapeHtml(x[0])+'</span><strong>'+escapeHtml(x[1])+'</strong></article>').join('')+'</div><div class="atlasBookLearning"><strong>🔎 Kaşif notu</strong><p>'+escapeHtml(u.name)+' ülkesinin başkenti '+escapeHtml(u.capital)+'. '+escapeHtml(u.region)+' bölgesinde yer alır ve yaklaşık '+fmt(u.population)+' kişilik nüfusa sahiptir. Bayrağını incele, haritada yerini bul!</p></div><div class="atlasBookNavigation"><button id="atlasBookPrev" '+(atlasKitapSayfa===0?'disabled':'')+'>← Önceki ülke</button><span>'+ (atlasKitapSayfa+1)+' / '+atlasDunyaKitabi.length+'</span><button id="atlasBookNext" '+(atlasKitapSayfa===atlasDunyaKitabi.length-1?'disabled':'')+'>Sonraki ülke →</button></div></div>';
+ c.querySelector('#atlasBookPrev')?.addEventListener('click',()=>{atlasKitapSayfa--;atlasDunyaKitapSayfasiniCiz('prev');});c.querySelector('#atlasBookNext')?.addEventListener('click',()=>{atlasKitapSayfa++;atlasDunyaKitapSayfasiniCiz('next');});
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-atlas-book-index]');if(b)atlasDunyaKitapSayfasiniAc(+b.dataset.atlasBookIndex);});
 // Atlas içeriği okuma verisinden bağımsız statik içeriktir — sayfa yüklenince bir kez oluşturulur.
 ulkeleriGoster();
+atlasTumDunyaUlkeVerisiniYukle();
 turkiyeSehirleriniGoster();
 bilimDunyasiniGoster();
 
