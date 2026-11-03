@@ -54,7 +54,6 @@
           <button class="anaSekmeBtn" data-anasekme="yildiz-kutuphanesi" type="button">📚 Yıldız Kütüphanesi</button>
           <button class="anaSekmeBtn" data-anasekme="kargo" type="button">📦 Kargo Ambarı</button>
           <button class="anaSekmeBtn" data-anasekme="oduller" type="button">🎁 Ödüller</button>
-          <button class="anaSekmeBtn" data-anasekme="atlas" type="button">🗺️ Atlas</button>
           <button class="anaSekmeBtn" data-anasekme="tren" type="button">🚂 Hızlı Okuma Treni</button>
         </div>
 
@@ -269,30 +268,6 @@
         </div>
 
         <!-- ====================== -->
-        <!-- SEKME: ÇOCUK DÜNYA ATLASI -->
-        <!-- ====================== -->
-        <div id="anasekme-atlas" class="anaSekmeIcerik" style="display:none;">
-          <section class="kart atlasBolumu">
-            <h2>🗺️ Çocuk Dünya Atlası</h2>
-            <p class="aciklamaMetni">Dünyayı keşfet! Ülkeler, uzay, yer altı ve deniz altı hakkında eğlenceli bilgiler. Bir karta dokun, sayfası açılsın!</p>
-
-            <div class="atlasSekmeler">
-              <button class="atlasSekmeBtn aktif" data-sekme="ulkeler" type="button">🌍 Ülkeler</button>
-              <button class="atlasSekmeBtn" data-sekme="turkiye" type="button">🇹🇷 Türkiye</button>
-              <button class="atlasSekmeBtn" data-sekme="uzay" type="button">🚀 Uzay</button>
-              <button class="atlasSekmeBtn" data-sekme="yeralti" type="button">⛏️ Yeraltı Dünyası</button>
-              <button class="atlasSekmeBtn" data-sekme="denizalti" type="button">🌊 Deniz Altı</button>
-            </div>
-
-            <div id="atlas-ulkeler" class="atlasIcerik ulkeGrid"></div>
-            <div id="atlas-turkiye" class="atlasIcerik ulkeGrid" style="display:none;"></div>
-            <div id="atlas-uzay" class="atlasIcerik" style="display:none;"></div>
-            <div id="atlas-yeralti" class="atlasIcerik" style="display:none;"></div>
-            <div id="atlas-denizalti" class="atlasIcerik" style="display:none;"></div>
-          </section>
-        </div>
-
-        <!-- ====================== -->
         <!-- SEKME: HIZLI OKUMA TRENİ -->
         <!-- Bağımsız bir mini uygulama — kendi HTML/CSS/JS dosyasında -->
         <!-- izole çalışır, iframe ile burada gösterilir. -->
@@ -314,15 +289,6 @@
     </div>
 
     <!-- ====================== -->
-    <!-- ATLAS DETAY PENCERESİ (kart tıklanınca "sayfa gibi" açılır) -->
-    <!-- ====================== -->
-    <div id="atlasModal" class="atlasModal" style="display:none;">
-      <div class="atlasModalKutu">
-        <button id="atlasModalKapat" type="button" class="atlasModalKapatBtn" title="Kapat">✕</button>
-        <div id="atlasModalIcerik"></div>
-      </div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="script.js?v=20261016-phoenix-art"></script>
